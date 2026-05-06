@@ -1,0 +1,9 @@
+<h2>新增员工到 {{ salon.name }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">保存员工信息</button>
+</form>
+<hr>
+<a href="{% url 'dashboard' %}">← 返回仪表盘</a>
+<a href="{% url 'dashboard' %}">返回首页</a>

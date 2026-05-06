@@ -22,6 +22,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('services/', include('services.urls')),
     # 🚩 将根路径直接跳转到 dashboard
-    path('', lambda request: redirect('services/dashboard/')),
+    
     
 ]

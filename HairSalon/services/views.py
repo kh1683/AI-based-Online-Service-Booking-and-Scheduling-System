@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Salon, Staff, Service
+from .forms import StaffForm
 
 @login_required
 def salon_dashboard(request):
@@ -19,3 +20,17 @@ def salon_dashboard(request):
         'staffs': staffs,
         'services': services
     })
+    
+@login_required
+def add_staff(request):
+    salon = Salon.objects.get(owner=request.user)
+    if request.method == 'POST':
+        form = StaffForm(request.POST)
+        if form.is_valid():
+            staff = form.save(commit=False)
+            staff.salon = salon  # 🚩 自动将新员工绑定到当前店主的店铺
+            staff.save()
+            return redirect('dashboard')
+    else:
+        form = StaffForm()
+    return render(request, 'services/add_staff.html', {'form': form})
