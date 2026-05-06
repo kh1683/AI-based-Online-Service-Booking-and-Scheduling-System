@@ -1,0 +1,33 @@
+{
+	"folders": [
+		{
+			"name": "AI-based-Online-Service-Booking-and-Scheduling-System",
+			"path": "."
+		},
+		{
+			"name": "Hello",
+			"path": "../New folder/Hello/Hello"
+		},
+		{
+			"name": "services",
+			"path": "../New folder/Hello/services"
+		},
+		{
+			"name": "media",
+			"path": "../New folder/Hello/media"
+		},
+		{
+			"name": "staff_pics",
+			"path": "../New folder/Hello/staff_pics"
+		},
+		{
+			"name": "statics",
+			"path": "../New folder/Hello/statics"
+		},
+		{
+			"name": "template",
+			"path": "../New folder/Hello/template"
+		}
+	],
+	"settings": {}
+}
