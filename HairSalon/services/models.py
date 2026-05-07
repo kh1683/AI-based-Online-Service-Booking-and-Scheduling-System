@@ -46,3 +46,26 @@ class Service(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.salon.name}"
+    
+    
+class Booking(models.Model):
+    STATUS_CHOICES = [
+        ('pending', '等待中'),
+        ('confirmed', '已确认'),
+        ('completed', '已完成'),
+        ('cancelled', '已取消'),
+    ]
+
+    salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='bookings')
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='my_bookings')
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='bookings')
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='bookings')
+    
+    booking_date = models.DateField() # 预约日期
+    timeslot = models.TimeField()     # 预约时间点
+    
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.customer.username} - {self.service.name} - {self.booking_date}"

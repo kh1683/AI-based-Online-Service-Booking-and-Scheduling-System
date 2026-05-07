@@ -1,0 +1,31 @@
+{% extends 'services/base.html' %}
+
+{% block header_content %}
+    <h1 class="display-5 fw-bold">预约服务</h1>
+    <p class="lead">您正在预约：<strong>{{ salon.name }}</strong></p>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-theme-primary">{{ field.label }}</label>
+                            {{ field }}
+                        </div>
+                    {% endfor %}
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">
+                            <i class="bi bi-calendar-check"></i> 确认预约
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
