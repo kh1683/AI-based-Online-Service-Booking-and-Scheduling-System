@@ -1,0 +1,7 @@
+<h2>新增服务到 {{ salon.name }}</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">保存服务项目</button>
+</form>
+<a href="{% url 'dashboard' %}">← 返回仪表盘</a>
