@@ -27,7 +27,7 @@ class Salon(models.Model):
 class Staff(models.Model):
     # 关联到特定的 Salon，实现多租户数据隔离
     salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='staffs', verbose_name="所属店铺")
-    
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_profile')
     name = models.CharField(max_length=100, verbose_name="姓名")
     specialty = models.CharField(max_length=100, verbose_name="专业技能") # 比如：理发、染发、洗头
     phone = models.CharField(max_length=20, verbose_name="联系电话")

@@ -7,4 +7,6 @@ urlpatterns = [
     path('add-service/', views.add_service, name='add_service'),
     path('salon/<int:salon_id>/book/', views.create_booking, name='create_booking'),
     path('booking/<int:booking_id>/approve/', views.approve_booking, name='approve_booking'),
+    path('booking/<int:booking_id>/reject/', views.reject_booking, name='reject_booking'),
+    path('my-schedule/', views.staff_schedule, name='staff_schedule'),
 ]
