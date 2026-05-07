@@ -1,0 +1,39 @@
+{% extends 'services/base.html' %}
+
+{% block title %}新增服务 | {{ salon.name }}{% endblock %}
+
+{% block header_content %}
+    <h1 class="display-5 fw-bold"><i class="bi bi-scissors"></i> 配置服务项目</h1>
+    <p class="lead">定义您的服务名称、价格以及预期的服务时长</p>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-secondary">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm" style="background-color: #6f42c1; border-color: #6f42c1;">
+                            <i class="bi bi-plus-lg"></i> 确认添加服务
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-link text-muted">返回仪表盘</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

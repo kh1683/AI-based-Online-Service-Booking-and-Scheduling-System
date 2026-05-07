@@ -21,3 +21,28 @@ class Salon(models.Model):
 
     def __str__(self):
         return f"{self.name} (Owner: {self.owner.username})"
+    
+    
+    
+class Staff(models.Model):
+    # 关联到特定的 Salon，实现多租户数据隔离
+    salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='staffs', verbose_name="所属店铺")
+    
+    name = models.CharField(max_length=100, verbose_name="姓名")
+    specialty = models.CharField(max_length=100, verbose_name="专业技能") # 比如：理发、染发、洗头
+    phone = models.CharField(max_length=20, verbose_name="联系电话")
+    
+    def __str__(self):
+        return f"{self.name} - {self.salon.name}"
+    
+    
+class Service(models.Model):
+    # 同样通过 ForeignKey 锁定在该店的业务范围
+    salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='services', verbose_name="所属店铺")
+    
+    name = models.CharField(max_length=100, verbose_name="服务名称")
+    price_range = models.CharField(max_length=50, verbose_name="价格区间")
+    duration = models.IntegerField(help_text="预估耗时 (分钟)", verbose_name="耗时")
+    
+    def __str__(self):
+        return f"{self.name} - {self.salon.name}"
