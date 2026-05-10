@@ -1,0 +1,96 @@
+{% extends 'services/base.html' %}
+
+{% block title %}注册店铺 | 商家后台{% endblock %}
+
+{% block header_content %}
+    <h1 class="display-5 fw-bold"><i class="bi bi-shop-window"></i> 开启您的智能业务</h1>
+    <p class="lead">只需几秒钟，即可配置您的店铺并启用 AI 预约系统</p>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-6">
+        <div class="card shadow border-0" style="border-radius: 20px;">
+            <div class="card-body p-5">
+                <div class="mb-4">
+                    <h4 class="fw-bold text-theme-primary">店铺基础信息</h4>
+                    <p class="text-muted small">这些信息将展示给您的客户，请认真填写。</p>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary small text-uppercase">
+                            {{ field.label }}
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 text-muted">
+                                {% if '名称' in field.label or 'name' in field.label.lower %}<i class="bi bi-tag"></i>
+                                {% elif '地址' in field.label or 'location' in field.label.lower %}<i class="bi bi-geo-alt"></i>
+                                {% else %}<i class="bi bi-pencil-square"></i>{% endif %}
+                            </span>
+                            {{ field }}
+                        </div>
+                        {% if field.help_text %}
+                            <div class="form-text small">{{ field.help_text }}</div>
+                        {% endif %}
+                        {% for error in field.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endfor %}
+
+                    <div class="d-grid gap-2 mt-5">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm" style="border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                            <i class="bi bi-check-circle-fill me-2"></i> 完成注册并进入仪表盘
+                        </button>
+                        <a href="{% url 'onboarding_choice' %}" class="btn btn-link text-muted mt-2">返回上一步</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="mt-4 text-center">
+            <div class="p-3 bg-light rounded-3 d-inline-block">
+                <small class="text-muted">
+                    <i class="bi bi-lightbulb text-warning me-2"></i>
+                    <strong>提示：</strong> 开店后您可以立即添加员工和服务项目。
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* 复用注册页面的格子修复 CSS */
+    .input-group {
+        display: flex !important;
+        align-items: stretch;
+    }
+    .input-group-text {
+        border-top-left-radius: 12px !important;
+        border-bottom-left-radius: 12px !important;
+        background-color: #f8f9fa;
+        border-right: none;
+        width: 45px;
+        justify-content: center;
+    }
+    /* 强制让 Django 渲染的 input 填满 */
+    .input-group input, .input-group textarea, .input-group select {
+        flex: 1 1 auto;
+        width: 1% !important;
+        border: 1px solid #dee2e6 !important;
+        border-left: none !important;
+        border-top-right-radius: 12px !important;
+        border-bottom-right-radius: 12px !important;
+        padding: 12px !important;
+        outline: none;
+    }
+    .input-group input:focus {
+        border-color: #667eea !important;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.1);
+    }
+</style>
+{% endblock %}
