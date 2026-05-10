@@ -122,4 +122,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-
+# settings.py
+LOGIN_REDIRECT_URL = 'onboarding_choice' # 登录后先去分流页
+LOGOUT_REDIRECT_URL = 'login'            # 登出后回登录页

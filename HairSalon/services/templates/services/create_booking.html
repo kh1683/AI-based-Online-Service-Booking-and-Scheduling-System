@@ -1,31 +1,67 @@
 {% extends 'services/base.html' %}
 
 {% block header_content %}
-    <h1 class="display-5 fw-bold">预约服务</h1>
-    <p class="lead">您正在预约：<strong>{{ salon.name }}</strong></p>
+    <h1 class="display-5 fw-bold">Book an Appointment</h1>
+    <p class="lead">Secure your spot at <strong>{{ salon.name }}</strong></p>
+    
 {% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
+<div class="row justify-content-center mt-4">
     <div class="col-md-6">
-        <div class="card shadow-sm">
-            <div class="card-body p-4">
+        <div class="card shadow border-0" style="border-radius: 20px;">
+            <div class="card-body p-4 p-md-5">
                 <form method="post">
                     {% csrf_token %}
+                    
                     {% for field in form %}
-                        <div class="mb-3">
-                            <label class="form-label fw-bold text-theme-primary">{{ field.label }}</label>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-secondary">{{ field.label }}</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0">
+                                {% if 'Date' in field.label %}<i class="bi bi-calendar-event"></i>
+                                {% elif 'Staff' in field.label %}<i class="bi bi-person-badge"></i>
+                                {% elif 'Service' in field.label %}<i class="bi bi-scissors"></i>
+                                {% else %}<i class="bi bi-clock"></i>{% endif %}
+                            </span>
                             {{ field }}
                         </div>
+                        {% for error in field.errors %}
+                            <div class="text-danger small mt-1">{{ error }}</div>
+                        {% endfor %}
+                    </div>
                     {% endfor %}
-                    <div class="d-grid mt-4">
-                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">
-                            <i class="bi bi-calendar-check"></i> 确认预约
+
+                    <div class="d-grid gap-2 mt-5">
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm" style="border-radius: 12px;">
+                            Confirm Reservation
                         </button>
+                        <a href="{% url 'salon_list' %}" class="btn btn-link text-muted mt-2 text-decoration-none">Cancel</a>
                     </div>
                 </form>
             </div>
         </div>
+        
+        <div class="mt-4 text-center">
+            <p class="small text-muted">
+                <i class="bi bi-info-circle me-1"></i> 
+                Our AI system will automatically check for staff availability.
+            </p>
+        </div>
     </div>
 </div>
+
+<style>
+    /* 这里的 CSS 逻辑和之前开店页面的一样，确保 input 和 icon 完美对齐 */
+    .input-group input, .input-group select {
+        border-left: none !important;
+        border-top-right-radius: 12px !important;
+        border-bottom-right-radius: 12px !important;
+        padding: 12px !important;
+    }
+    .input-group-text {
+        border-top-left-radius: 12px !important;
+        border-bottom-left-radius: 12px !important;
+    }
+</style>
 {% endblock %}

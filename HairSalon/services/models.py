@@ -22,30 +22,42 @@ class Salon(models.Model):
     def __str__(self):
         return f"{self.name} (Owner: {self.owner.username})"
     
-    
-    
+# 将第 25 行到第 46 行的内容替换为这一个类
 class Staff(models.Model):
-    # 关联到特定的 Salon，实现多租户数据隔离
+    # 1. 关联到店铺
     salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='staffs', verbose_name="所属店铺")
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_profile')
-    name = models.CharField(max_length=100, verbose_name="姓名")
-    specialty = models.CharField(max_length=100, verbose_name="专业技能") # 比如：理发、染发、洗头
-    phone = models.CharField(max_length=20, verbose_name="联系电话")
     
+    # 2. 关联到用户账号 (可选，如果员工也要登录系统的话)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_profile')
+    
+    # 3. 基本信息
+    name = models.CharField(max_length=100, verbose_name="姓名")
+    role = models.CharField(max_length=100, blank=True, null=True, default='General Stylist') # 🚩 保留这个字段
+    specialty = models.CharField(max_length=200, blank=True, null=True, verbose_name="专业技能")
+    phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="联系电话")
+    is_active = models.BooleanField(default=True, verbose_name="是否在职") # 🚩 默认为在职  
     def __str__(self):
-        return f"{self.name} - {self.salon.name}"
+        # 统一返回格式
+        return f"{self.name} ({self.role})"
     
     
 class Service(models.Model):
     # 同样通过 ForeignKey 锁定在该店的业务范围
     salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='services', verbose_name="所属店铺")
+    name = models.CharField(max_length=100, verbose_name="Services")
+    min_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    max_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     
-    name = models.CharField(max_length=100, verbose_name="服务名称")
-    price_range = models.CharField(max_length=50, verbose_name="价格区间")
-    duration = models.IntegerField(help_text="预估耗时 (分钟)", verbose_name="耗时")
-    
+    # 🚩 增加一个给顾客看的提示词
+    price_note = models.CharField(
+        max_length=200, 
+        blank=True, 
+        default="Price varies by age and hair length/style."
+    )
+    duration_minutes = models.IntegerField(default=30, help_text="平均所需分钟数")
+    is_active = models.BooleanField(default=True)    
     def __str__(self):
-        return f"{self.name} - {self.salon.name}"
+        return f"{self.name} (RM {self.min_price} - {self.max_price})"
     
     
 class Booking(models.Model):
@@ -69,3 +81,5 @@ class Booking(models.Model):
 
     def __str__(self):
         return f"{self.customer.username} - {self.service.name} - {self.booking_date}"
+    
+    

@@ -15,11 +15,13 @@ class StaffForm(forms.ModelForm):
 class ServiceForm(forms.ModelForm):
     class Meta:
         model = Service
-        fields = ['name', 'price_range', 'duration']
+        fields = ['name','min_price', 'max_price', 'price_note', 'duration_minutes']
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '服务名称'}),
-            'price_range': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '例如: 50-100'}),
-            'duration': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': '分钟'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Service Name'}),
+            'min_price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Min Price'}),
+            'max_price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Max Price'}),
+            'price_note': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Depends on hair length'}),
+            'duration_minutes': forms.NumberInput(attrs={'placeholder': '例如: 60'}),
         }
         
 class BookingForm(forms.ModelForm):
