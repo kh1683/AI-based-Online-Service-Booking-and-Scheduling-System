@@ -3,31 +3,52 @@
 {% block title %}登录 | {{ salon.name }}{% endblock %}
 
 {% block header_content %}
-    <h1 class="display-4 fw-bold">欢迎回来</h1>
-    <p class="lead">请登录以访问您的个性化仪表盘</p>
+    <h1 class="display-4 fw-bold">Welcome Back</h1>
+    <p class="lead">Please log in to access your personalized dashboard</p>
 {% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-5">
-        <div class="card shadow-sm border-0">
+        <div class="card shadow-sm border-0" style="border-radius: 15px;">
             <div class="card-body p-4 p-md-5">
+                {% if form.errors %}
+                <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert" style="border-radius: 10px; font-size: 0.9rem;">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Invalid username or password. Please try again.
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
                 <form method="post">
                     {% csrf_token %}
+                    
                     <div class="mb-3">
-                        <label class="form-label fw-bold">用户名</label>
-                        <input type="text" name="username" class="form-control" placeholder="请输入用户名" required>
+                        <label class="form-label fw-bold">Username</label>
+                        <input type="text" name="username" class="form-control" value="{{ form.username.value|default:'' }}" placeholder="Enter your username" required>
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">密码</label>
-                        <input type="password" name="password" class="form-control" placeholder="请输入密码" required>
+                    
+                    <div class="mb-1">
+                        <label class="form-label fw-bold">Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="Enter your password" required>
                     </div>
+                    
+                    <div class="text-end mb-4">
+                        <a href="{% url 'forgot_password' %}" class="small text-decoration-none text-primary fw-bold">
+                            Forgot Password?
+                        </a>
+                    </div>
+
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg shadow-sm">进入系统</button>
+                        <button type="submit" class="btn btn-primary btn-lg shadow-sm rounded-pill">
+                            Sign In
+                        </button>
                     </div>
                 </form>
+                
                 <div class="mt-4 text-center">
-                    <p class="text-muted">还没有账号？ <a href="{% url 'register' %}" class="text-theme-accent fw-bold text-decoration-none">注册一个</a></p>
+                    <p class="text-muted small">Don't have an account? 
+                        <a href="{% url 'register' %}" class="text-primary fw-bold text-decoration-none">Register here</a>
+                    </p>
                 </div>
             </div>
         </div>

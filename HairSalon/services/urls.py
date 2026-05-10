@@ -24,4 +24,9 @@ urlpatterns = [
     path('manage-staff/', views.manage_staff, name='manage_staff'),
     path('staff/<int:staff_id>/toggle/', views.toggle_staff_status, name='toggle_staff_status'),
     path('salon/<int:salon_id>/', views.salon_detail, name='salon_detail'),
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
+    path('verify-otp/', views.verify_otp, name='verify_otp'),
+    # path('select-role/<str:role_choice>/', views.select_role, name='select_role'),
+    path('', views.home_router, name='home'),
+    path('choose-role/<str:role_choice>/', views.choose_role, name='choose_role'),
 ]

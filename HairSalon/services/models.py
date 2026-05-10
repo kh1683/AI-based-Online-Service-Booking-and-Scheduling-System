@@ -2,6 +2,9 @@
 # Create your models here.
 from django.db import models
 from django.conf import settings
+from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 class Salon(models.Model):
     # 核心：将店铺与创建它的用户（店主）绑定
@@ -83,3 +86,21 @@ class Booking(models.Model):
         return f"{self.customer.username} - {self.service.name} - {self.booking_date}"
     
     
+class UserProfile(models.Model):
+    ROLE_CHOICES = [
+        ('none', 'None'),
+        ('customer', 'Customer'),
+        ('merchant', 'Merchant'),
+    ]
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='none')
+    # 如果是商家，可以预留一个字段判断是否填了店名
+    has_setup_salon = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.role}"
+    
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)

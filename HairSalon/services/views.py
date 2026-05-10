@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from .models import Salon, Staff, Service, Booking
+from .models import Salon, Staff, Service, Booking, UserProfile
 from .forms import StaffForm, ServiceForm, BookingForm
 from datetime import date, timedelta
 from django.db.models import Count
@@ -10,6 +10,10 @@ from django import forms
 from django.utils import timezone
 from django.contrib import messages
 from datetime import datetime,time
+import random
+from django.core.mail import send_mail
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import check_password
 
 @login_required
 def salon_dashboard(request):
@@ -369,3 +373,99 @@ def salon_detail(request, salon_id):
         'salon': salon,
         'services': services
     })
+    
+def forgot_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        user = User.objects.filter(email=email).first()
+        
+        if user:
+            # 1. 生成 6 位随机数
+            otp = str(random.randint(100000, 999999))
+            
+            # 2. 将 OTP 和 Email 存入 Session (有效期默认是浏览器关闭)
+            request.session['reset_otp'] = otp
+            request.session['reset_email'] = email
+            
+            # 3. 发送邮件
+            subject = 'Your Password Reset OTP'
+            message = f'Your OTP for password reset is: {otp}. It will expire soon.'
+            from_email = 'your-email@gmail.com'
+            
+            try:
+                send_mail(subject, message, from_email, [email])
+                messages.success(request, "OTP has been sent to your email.")
+                return redirect('verify_otp') # 跳转到输入验证码的页面
+            except Exception as e:
+                messages.error(request, "Failed to send email. Please try again.")
+        else:
+            messages.error(request, "No account found with this email.")
+            
+    return render(request, 'registration/forgot_password.html')   
+
+def verify_otp(request):
+    if request.method == 'POST':
+        user_otp = request.POST.get('otp')
+        new_password = request.POST.get('new_password')
+        session_otp = request.session.get('reset_otp')
+        email = request.session.get('reset_email')
+        
+        if user_otp == session_otp:
+            # 验证成功，修改密码
+            user = User.objects.get(email=email)
+            if check_password(new_password, user.password):
+                messages.error(request, "Your new password cannot be the same as your old one. Please choose a different one.")
+                return render(request, 'registration/verify_otp.html') # 拦截，不让保存
+            user.set_password(new_password)
+            user.save()
+            
+            # 清除 Session 防止重复使用
+            del request.session['reset_otp']
+            del request.session['reset_email']
+            
+            messages.success(request, "Password reset successful! Please login.")
+            return redirect('login')
+        else:
+            messages.error(request, "Invalid OTP. Please try again.")
+            
+    return render(request, 'registration/verify_otp.html')
+
+
+@login_required
+def choose_role(request, role_choice):
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if role_choice == 'customer':
+        profile.role = 'customer'
+        profile.save()
+        return redirect('salon_list') # 客户直接去看店
+    
+    elif role_choice == 'merchant':
+        profile.role = 'merchant'
+        profile.save()
+        return redirect('create_salon') # 商家去填店名资料
+    
+    return redirect('onboarding_page')
+
+
+
+@login_required
+def home_router(request):
+    # 🚩 改用 get_or_create，防止 DoesNotExist 报错
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+
+    # 如果角色还是 none，才显示 onboarding 页面
+    if profile.role == 'none':
+        return render(request, 'services/onboarding.html')
+
+    # 根据记录的角色分流
+    if profile.role == 'customer':
+        return redirect('salon_list')
+        
+    elif profile.role == 'merchant':
+        if not profile.has_setup_salon:
+            return redirect('create_salon')
+        return redirect('merchant_dashboard')
+    
+    # 兜底：如果出了意外，依然回选择页
+    return render(request, 'services/onboarding.html')
