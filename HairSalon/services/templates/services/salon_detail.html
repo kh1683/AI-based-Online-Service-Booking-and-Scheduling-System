@@ -1,0 +1,74 @@
+{% extends 'services/base.html' %}
+
+
+<div class="container mt-4">
+    <div class="p-4 text-center shadow-lg" 
+         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                border-radius: 24px; 
+                min-height: 160px; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center;">
+        
+        <div>
+            <h1 class="display-4 fw-bold text-white mb-1">{{ salon.name }}</h1>
+            <p class="lead text-white-50 mb-0">
+                <i class="bi bi-geo-alt-fill me-1"></i> {{ salon.location }}
+            </p>
+        </div>
+    </div>
+</div>
+
+{% block content %}
+<div class="container mt-4">
+    <div class="p-4 text-center shadow-lg" 
+         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                border-radius: 24px; 
+                min-height: 160px; 
+                display: flex; 
+                align-items: center; 
+                justify-content: center;">
+        
+        <div>
+            <h1 class="display-4 fw-bold text-white mb-1">{{ salon.name }}</h1>
+            <p class="lead text-white-50 mb-0">
+                <i class="bi bi-geo-alt-fill me-1"></i> {{ salon.location }}
+            </p>
+        </div>
+    </div>
+</div>
+<div class="container mt-n4">
+    <h4 class="fw-bold mb-4">Our Services</h4>
+    
+        <div class="row g-3">
+            {% for service in services %}
+            <div class="col-md-6">
+                <div class="card h-100 shadow-sm border-0" style="border-radius: 15px;">
+                    <div class="card-body d-flex justify-content-between align-items-center">
+                        <div>
+                            <h5 class="fw-bold mb-1">{{ service.name }}</h5>
+                            <div class="text-muted small">
+                                <i class="bi bi-clock me-1"></i> 约 {{ service.duration_minutes }} 分钟
+                            </div>
+                            {% if service.price_note %}
+                            <div class="extra-small text-secondary mt-1" style="font-size: 0.75rem;">
+                                * {{ service.price_note }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="text-end">
+                            <span class="text-primary fw-bold fs-5">RM {{ service.min_price }} - {{ service.max_price }}</span>
+                            <div class="mt-2">
+                                <a href="{% url 'create_booking' salon.id %}?service={{ service.id }}" class="btn btn-dark btn-sm rounded-pill px-3">Book Now</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted">这家店暂时还没有提供服务项目。</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

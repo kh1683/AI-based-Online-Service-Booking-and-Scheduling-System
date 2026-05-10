@@ -73,7 +73,7 @@
                     {% else %}
                         <li><hr class="dropdown-divider"></li>
                         <li><h6 class="dropdown-header text-uppercase small fw-bold">Customer Portal</h6></li>
-                        <li><a class="dropdown-item" href="{% url 'my_booking' %}">
+                        <li><a class="dropdown-item" href="{% url 'my_bookings' %}">
                             <i class="bi bi-calendar-event me-2"></i> My Bookings
                         </a></li>
                         <li><a class="dropdown-item" href="{% url 'salon_list' %}">
@@ -103,6 +103,7 @@
     <div class="main-header shadow" style="padding-top: 100px; padding-bottom: 60px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
         <div class="container text-center text-white">
             {% block header_content %}
+            
                 {% endblock %}
         </div>
     </div>

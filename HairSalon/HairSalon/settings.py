@@ -105,7 +105,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kuala_Lumpur'
 
 USE_I18N = True
 
@@ -125,3 +125,13 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # settings.py
 LOGIN_REDIRECT_URL = 'onboarding_choice' # 登录后先去分流页
 LOGOUT_REDIRECT_URL = 'login'            # 登出后回登录页
+LOGIN_URL = '/services/register/'  # 🚩 这里换成你实际的登录 URL
+
+
+# 建议使用环境变量或 App Password (不要直接用登录密码)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'kianhao555@gmail.com' # 你的 Gmail
+EMAIL_HOST_PASSWORD = 'kjfd nqhv dyue nuih' # Gmail 的应用专用密码

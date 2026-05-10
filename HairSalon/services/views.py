@@ -9,6 +9,7 @@ from django.contrib.auth import login
 from django import forms
 from django.utils import timezone
 from django.contrib import messages
+from datetime import datetime,time
 
 @login_required
 def salon_dashboard(request):
@@ -23,6 +24,16 @@ def salon_dashboard(request):
     except Salon.DoesNotExist:
         return redirect('')  # 之后我们再补这个创建页面
 
+
+    salon = get_object_or_404(Salon, owner=request.user)
+    staff_count = Staff.objects.filter(salon=salon, is_active=True).count()
+    service_count = Service.objects.filter(salon=salon, is_active=True).count()
+    # 🚩 1. 获取所有的待处理预约对象（给表格循环用）
+    pending_bookings_list = Booking.objects.filter(salon=salon, status='pending')
+    
+    # 🚩 2. 获取数量（给紫色卡片显示数字用）
+    pending_count = pending_bookings_list.count()
+    
     # 使用 related_name 轻松获取数据
     staffs = salon.staffs.all()
     services = salon.services.all()
@@ -72,36 +83,41 @@ def salon_dashboard(request):
         # 🚩 重点：把图表数据传过去
         'chart_labels': chart_labels,
         'chart_data': chart_data,
+        #统计
+        'staff_count': staff_count,
+        'service_count': service_count,
+        'pending_bookings': pending_bookings_list,  # 🚩 传列表给表格循环
+        'pending_count': pending_count,
     })
     
-@login_required
-def add_staff(request):
-    salon = Salon.objects.get(owner=request.user)
-    if request.method == 'POST':
-        form = StaffForm(request.POST)
-        if form.is_valid():
-            staff = form.save(commit=False)
-            staff.salon = salon  # 🚩 自动将新员工绑定到当前店主的店铺
-            staff.save()
-            return redirect('dashboard')
-    else:
-        form = StaffForm()
-    return render(request, 'services/add_staff.html', {'form': form})
+# @login_required
+# def add_staff(request):
+#     salon = Salon.objects.get(owner=request.user)
+#     if request.method == 'POST':
+#         form = StaffForm(request.POST)
+#         if form.is_valid():
+#             staff = form.save(commit=False)
+#             staff.salon = salon  # 🚩 自动将新员工绑定到当前店主的店铺
+#             staff.save()
+#             return redirect('dashboard')
+#     else:
+#         form = StaffForm()
+#     return render(request, 'services/add_staff.html', {'form': form})
 
 
-@login_required
-def add_service(request):
-    salon = Salon.objects.get(owner=request.user)
-    if request.method == 'POST':
-        form = ServiceForm(request.POST)
-        if form.is_valid():
-            service = form.save(commit=False)
-            service.salon = salon  # 同样自动绑定当前店铺
-            service.save()
-            return redirect('dashboard')
-    else:
-        form = ServiceForm()
-    return render(request, 'services/add_service.html', {'form': form})
+# @login_required
+# def add_service(request):
+#     salon = Salon.objects.get(owner=request.user)
+#     if request.method == 'POST':
+#         form = ServiceForm(request.POST)
+#         if form.is_valid():
+#             service = form.save(commit=False)
+#             service.salon = salon  # 同样自动绑定当前店铺
+#             service.save()
+#             return redirect('dashboard')
+#     else:
+#         form = ServiceForm()
+#     return render(request, 'services/add_service.html', {'form': form})
 
 
 
@@ -110,11 +126,38 @@ def create_booking(request, salon_id):
     salon = Salon.objects.get(id=salon_id)
     
     if request.method == 'POST':
+        date_str = request.POST.get('booking_date') # 假设你的 input name 是这个
+        booking_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        
         form = BookingForm(request.POST, salon=salon)
         if form.is_valid():
             booking = form.save(commit=False)
-            booking.salon = salon
-            booking.customer = request.user
+            # 获取当前大马时间
+            now = timezone.now() 
+            today = now.date()
+            # 🚩 验证 1: 检查日期是否是过去
+            if booking.booking_date < timezone.now().date():
+                messages.error(request, "You cannot book a date in the past!")
+                form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
+                form.fields['service'].queryset = Service.objects.filter(salon=salon)
+                return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
+            
+            # 🚩 2. 营业时间拦截：10:00 - 19:00 (7 p.m.)
+            start_time = time(10, 0) # 10:00 AM
+            end_time = time(19, 0)   # 07:00 PM
+            
+            if not (start_time <= booking.timeslot <= end_time):
+                messages.error(request, f"❌ 预约失败！该店营业时间为 10:00 AM - 07:00 PM。")
+                form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
+                form.fields['service'].queryset = Service.objects.filter(salon=salon)
+                return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
+
+            # 🚩 3. 如果是今天，检查时间是否已经过了
+            if booking.booking_date == today and booking.timeslot < now.time():
+                messages.error(request, "❌ 这个时间点已经过去了，请选晚一点的时间。")
+                form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
+                form.fields['service'].queryset = Service.objects.filter(salon=salon)
+                return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
             
             # 🚩 核心：自动冲突检测逻辑
             # 检查是否有【相同员工】在【相同日期】和【相同时间】已有【已确认】的预约
@@ -125,14 +168,12 @@ def create_booking(request, salon_id):
                 status='confirmed'
             ).exists()
             
-            
             booking.salon = salon
             booking.customer = request.user # 绑定当前登录的客户
             
             if not conflict:
                 # 如果没有冲突，直接设为“已确认”，实现自动化
                 booking.status = 'confirmed'
-                
                 # 可以加个成功消息 (需 import messages)
                 messages.success(request, 'Appointment booked successfully! We look forward to seeing you.')
             else:
@@ -145,7 +186,8 @@ def create_booking(request, salon_id):
             
            
     else:
-        form = BookingForm(salon=salon)
+        selected_service_id = request.GET.get('service')
+        form = BookingForm(salon=salon, initial={'service': selected_service_id})
         form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True) # 🚩 只显示在职员工
         form.fields['service'].queryset = Service.objects.filter(salon=salon)
     return render(request, 'services/create_booking.html', {
@@ -256,6 +298,8 @@ def manage_staff(request):
             Staff.objects.create(salon=salon, name=name, role=role)
             messages.success(request, f'Staff {name} added successfully!')
             return redirect('manage_staff')
+        else:
+            messages.error(request, 'Please provide a staff name.')
             
     return render(request, 'services/manage_staff.html', {
         'staff_members': staff_members,
@@ -314,3 +358,14 @@ def toggle_service_status(request, service_id):
     # 🚩 4. 跳回管理页面
     return redirect('manage_services')
     
+def salon_detail(request, salon_id):
+    # 1. 找到这家店，找不到就报404
+    salon = get_object_or_404(Salon, id=salon_id)
+    
+    # 2. 核心逻辑：只获取属于这家店 (salon=salon) 且 正在营业 (is_active=True) 的服务
+    services = Service.objects.filter(salon=salon, is_active=True)
+    
+    return render(request, 'services/salon_detail.html', {
+        'salon': salon,
+        'services': services
+    })

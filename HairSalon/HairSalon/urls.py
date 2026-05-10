@@ -17,11 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import redirect
+from django.views.generic.base import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('services/', include('services.urls')),
     # 🚩 将根路径直接跳转到 dashboard
+    path('', RedirectView.as_view(url='/services/salon_list/', permanent=False)),
     
     
 ]
