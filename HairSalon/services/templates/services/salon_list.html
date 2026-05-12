@@ -10,8 +10,13 @@
     {% for salon in salons %}
     <div class="col-md-4 mb-4">
         <div class="card h-100 shadow-sm border-0" style="border-radius: 15px; transition: 0.3s;">
+            {% if salon.has_valid_image %}
+            <img src="{{ salon.image.url }}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80';"
+                 class="card-img-top" style="border-top-left-radius: 15px; border-top-right-radius: 15px; height: 200px; object-fit: cover;">
+            {% else %}
             <img src="https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" 
                  class="card-img-top" style="border-top-left-radius: 15px; border-top-right-radius: 15px; height: 200px; object-fit: cover;">
+            {% endif %}
             
             <div class="card-body">
                 <h5 class="card-title fw-bold">{{ salon.name }}</h5>
@@ -23,8 +28,8 @@
                     <span class="badge bg-light text-primary border border-primary px-3">
                         <i class="bi bi-star-fill text-warning"></i> 4.9
                     </span>
-                    <a href="{% url 'create_booking' salon.id %}" class="btn btn-primary rounded-pill px-4">
-                        Book Now
+                    <a href="{% url 'salon_detail' salon.id %}" class="btn btn-primary rounded-pill px-4">
+                        View Services
                     </a>
                 </div>
             </div>

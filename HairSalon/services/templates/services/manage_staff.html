@@ -1,13 +1,15 @@
 {% extends 'services/base.html' %}
 
 {% block header_content %}
-<div class="d-flex align-items-center justify-content-center">
-    <a href="{% url 'dashboard' %}" class="btn btn-light btn-sm rounded-circle shadow-sm me-3">
-        <i class="bi bi-arrow-left text-primary"></i>
+<div class="container position-relative">
+    <a href="{% url 'dashboard' %}" class="btn btn-light position-absolute top-0 start-0 mt-3 rounded-circle shadow-sm" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; z-index: 10;" title="Back to Dashboard">
+        <i class="bi bi-arrow-left fs-5 text-primary"></i>
     </a>
-    <h1 class="display-5 fw-bold mb-0">Manage Staff</h1>
+    <div class="text-center py-4">
+        <h1 class="display-5 fw-bold text-white">Manage Staff</h1>
+        <p class="lead text-white-50">Add or remove team members for {{ salon.name }}</p>
+    </div>
 </div>
-<p class="lead opacity-75 mt-2">Add or remove team members for {{ salon.name }}</p>
 {% endblock %}
 
 {% block content %}
@@ -16,7 +18,7 @@
         <div class="card shadow-sm border-0" style="border-radius: 15px;">
             <div class="card-body p-4">
                 <h5 class="fw-bold mb-3">Add New Staff</h5>
-                <form method="post">
+                <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Name</label>
@@ -25,6 +27,14 @@
                     <div class="mb-3">
                         <label class="form-label small fw-bold">Role/Position</label>
                         <input type="text" name="role" class="form-control" placeholder="e.g. Senior Stylist" style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Specialty (Professional Skill)</label>
+                        <input type="text" name="specialty" class="form-control" placeholder="e.g. Hair Coloring" style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Profile Picture</label>
+                        <input type="file" name="image" class="form-control" accept="image/*" style="border-radius: 10px;">
                     </div>
                     <button type="submit" class="btn btn-primary w-100 rounded-pill mt-2">
                         <i class="bi bi-plus-lg me-1"></i> Add Staff
@@ -50,7 +60,23 @@
                         <tbody>
                             {% for staff in staff_members %}
                             <tr>
-                                <td class="ps-4 fw-bold text-theme-primary">{{ staff.name }}</td>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        {% if staff.has_valid_image %}
+                                            <img src="{{ staff.image.url }}" class="rounded-circle me-3 border shadow-sm" style="width: 45px; height: 45px; object-fit: cover;">
+                                        {% else %}
+                                            <div class="rounded-circle me-3 bg-light d-flex align-items-center justify-content-center text-secondary border shadow-sm" style="width: 45px; height: 45px;">
+                                                <i class="bi bi-person-fill fs-5"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <div class="fw-bold text-theme-primary">{{ staff.name }}</div>
+                                            {% if staff.specialty %}
+                                            <small class="text-muted"><i class="bi bi-star me-1 text-warning"></i>{{ staff.specialty }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
                                 <td>{{ staff.role|default:"General Staff" }}</td>
                                 <td>
                                     {% if staff.is_active %}

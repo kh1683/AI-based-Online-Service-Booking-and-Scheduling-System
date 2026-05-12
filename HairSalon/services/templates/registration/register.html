@@ -14,7 +14,7 @@
             <div class="card-body p-5">
                 <div class="text-center mb-4">
                     <h2 class="fw-bold text-theme-primary">创建新用户</h2>
-                    <p class="text-muted">加入 AI 驱动的服务预约平台</p>
+                    <p class="text-muted">加入 AI 驱动的Service预约平台</p>
                 </div>
 
                 <form method="post">
@@ -46,7 +46,7 @@
 
                     <div class="d-grid gap-2 mt-4">
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm" style="border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
-                            立即注册
+                            立即Register
                         </button>
                     </div>
                 </form>
@@ -59,10 +59,10 @@
                     </div>
                     <button class="btn btn-outline-dark w-100 mb-3" style="border-radius: 12px;">
                         <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18" class="me-2">
-                        使用 Google 账号登录
+                        使用 Google 账号Login
                     </button>
                     
-                    <p class="mb-0 text-muted">已经有账号了？ <a href="{% url 'login' %}" class="text-theme-primary fw-bold text-decoration-none">立即登录</a></p>
+                    <p class="mb-0 text-muted">已经有账号了？ <a href="{% url 'login' %}" class="text-theme-primary fw-bold text-decoration-none">立即Login</a></p>
                 </div>
             </div>
         </div>
@@ -70,17 +70,17 @@
 </div>
 
 <style>
-    /* 1. 容器微调：确保图标和输入框在一个水平线上 */
+    
     .input-group {
         display: flex !important;
         align-items: stretch;
     }
 
-    /* 2. 图标部分：固定宽度，并修圆左边的角 */
+    
     .input-group-text {
         background-color: #f8f9fa;
         border: 1px solid #dee2e6;
-        border-right: none; /* 去掉右边框，准备跟输入框对接 */
+        border-right: none; 
         border-top-left-radius: 12px !important;
         border-bottom-left-radius: 12px !important;
         color: #6c757d;
@@ -88,27 +88,27 @@
         justify-content: center;
     }
 
-    /* 3. 核心修复：强制让 Django 渲染出的 input 填满剩余空间 */
+    
     .input-group input {
         flex: 1 1 auto;
-        width: 1% !important; /* 强制触发 flex 生效 */
-        margin-top: 0 !important; /* 去掉可能存在的顶部间距 */
+        width: 1% !important; 
+        margin-top: 0 !important; 
         border: 1px solid #dee2e6 !important;
-        border-left: none !important; /* 去掉左边框，与图标融合 */
+        border-left: none !important; 
         border-top-right-radius: 12px !important;
         border-bottom-right-radius: 12px !important;
         padding: 10px 15px !important;
         height: auto !important;
     }
 
-    /* 4. 聚焦时的颜色变化 */
+    
     .input-group input:focus {
         outline: none;
         border-color: #667eea !important;
         box-shadow: none;
     }
     
-    /* 5. 调整 Label 的间距 */
+    
     .form-label {
         margin-bottom: 0.3rem;
         display: block;

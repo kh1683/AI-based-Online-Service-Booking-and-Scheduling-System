@@ -1,8 +1,8 @@
 {% extends 'services/base.html' %}
 
 {% block header_content %}
-    <h1 class="display-5 fw-bold">最后一步，{{ request.user.username }}！</h1>
-    <p class="lead">请告诉我们您的主要用途，以便我们为您配置界面</p>
+    <h1 class="display-5 fw-bold">Final step, {{ request.user.username }}！</h1>
+    <p class="lead">Please tell us your primary use case so we can configure your dashboard</p>
 {% endblock %}
 
 {% block content %}
@@ -15,10 +15,11 @@
                         <div class="icon-box mb-4 mx-auto bg-light-primary">
                             <i class="bi bi-person-heart display-3 text-primary"></i>
                         </div>
-                        <h3 class="fw-bold">我是客户</h3>
-                        <p class="text-muted flex-grow-1">我想寻找附近的沙龙、诊所或修车厂，并享受 AI 智能预约带来的便捷体验。</p>
-                        <a href="{% url 'salon_list' %}" class="btn btn-outline-primary btn-lg rounded-pill mt-3">
-                            开始探索 <i class="bi bi-arrow-right"></i>
+                        <h3 class="fw-bold">I am a Customer</h3>
+                        <p class="text-muted flex-grow-1">I want to find nearby services and enjoy the convenience of AI-based smart booking.</p>
+                        
+                        <a href="{% url 'choose_role' 'customer' %}" class="btn btn-outline-primary btn-lg rounded-pill mt-3">
+                            Start Exploring <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
                 </div>
@@ -30,11 +31,13 @@
                         <div class="icon-box mb-4 mx-auto bg-light-purple">
                             <i class="bi bi-shop display-3 text-white"></i>
                         </div>
-                        <h3 class="fw-bold">我是店主</h3>
-                        <p class="text-muted flex-grow-1">我想管理我的生意、配置员工表，并利用 AI 流量预测来优化我的经营效率。</p>
-                        <a href="{% url 'create_salon' %}" class="btn btn-primary btn-lg rounded-pill mt-3">
-                            注册我的店铺 <i class="bi bi-rocket-takeoff"></i>
+                        <h3 class="fw-bold">I am a Business Owner</h3>
+                        <p class="text-muted flex-grow-1">I want to manage my business, configure staff, and use AI forecasting to optimize efficiency.</p>
+                        
+                        <a href="{% url 'choose_role' 'merchant' %}" class="btn btn-primary btn-lg rounded-pill mt-3">
+                            Register My Shop <i class="bi bi-rocket-takeoff"></i>
                         </a>
+                       
                     </div>
                 </div>
             </div>

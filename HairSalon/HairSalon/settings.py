@@ -105,7 +105,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kuala_Lumpur'
 
 USE_I18N = True
 
@@ -123,5 +123,29 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # settings.py
-LOGIN_REDIRECT_URL = 'onboarding_choice' # 登录后先去分流页
+# LOGIN_REDIRECT_URL = 'onboarding_choice' # 登录后先去分流页
 LOGOUT_REDIRECT_URL = 'login'            # 登出后回登录页
+LOGIN_URL = '/services/register/'  # 🚩 这里换成你实际的登录 URL
+LOGIN_REDIRECT_URL = 'home'
+
+
+# 建议使用环境变量或 App Password (不要直接用登录密码)
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'kianhao555@gmail.com' # 你的 Gmail
+EMAIL_HOST_PASSWORD = 'kjfd nqhv dyue nuih' # Gmail 的应用专用密码
+
+# 🚩 核心：设置为 True 后，用户关闭浏览器时 Session 就会失效
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+# (可选) 设置一个强制过期时间（例如 30 分钟不操作就踢下线）
+# SESSION_COOKIE_AGE = 1800 
+
+# 设置为 True 确保 Session 在每次请求时都会更新（保持活跃状态）
+SESSION_SAVE_EVERY_REQUEST = True
+
+import os
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
