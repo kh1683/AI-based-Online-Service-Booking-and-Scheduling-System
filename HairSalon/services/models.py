@@ -7,57 +7,67 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 class Salon(models.Model):
-    # 核心：将店铺与创建它的用户（店主）绑定
-    # 这就是 SaaS 多租户架构的基础：每个租户拥有自己的数据实体
+    # Core: Bind salon to its owner
+    # Foundation of SaaS multi-tenancy: each tenant owns their data
     owner = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='salon')
     
-    # 店铺基本信息
-    name = models.CharField(max_length=100, verbose_name="店铺名称")
-    location = models.CharField(max_length=200, verbose_name="店铺地址")
-    description = models.TextField(blank=True, null=True, verbose_name="店铺简介")
+    # Salon basic info
+    name = models.CharField(max_length=100, verbose_name="Salon Name")
+    location = models.CharField(max_length=200, verbose_name="Location")
+    contact_number = models.CharField(max_length=20, verbose_name="Contact Number", default="N/A")
+    description = models.TextField(blank=True, null=True, verbose_name="Description")
     
-    # 扩展：支持上传店铺的照片
-    image = models.ImageField(upload_to='salons/', blank=True, null=True, verbose_name="店铺图片")
+    # Extend: support salon images
+    image = models.ImageField(upload_to='salons/', blank=True, null=True, verbose_name="Salon Image")
     
-    # 记录创建时间，有助于后续的分析（如查看哪家店入驻最早）
+    # Track creation time
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.name} (Owner: {self.owner.username})"
     
-# 将第 25 行到第 46 行的内容替换为这一个类
+    @property
+    def has_valid_image(self):
+        return bool(self.image and self.image.storage.exists(self.image.name))
+
 class Staff(models.Model):
-    # 1. 关联到店铺
-    salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='staffs', verbose_name="所属店铺")
+    # 1. Link to Salon
+    salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='staffs', verbose_name="Salon")
     
-    # 2. 关联到用户账号 (可选，如果员工也要登录系统的话)
+    # 2. Link to user account (optional)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_profile')
     
-    # 3. 基本信息
-    name = models.CharField(max_length=100, verbose_name="姓名")
-    role = models.CharField(max_length=100, blank=True, null=True, default='General Stylist') # 🚩 保留这个字段
-    specialty = models.CharField(max_length=200, blank=True, null=True, verbose_name="专业技能")
-    phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="联系电话")
-    is_active = models.BooleanField(default=True, verbose_name="是否在职") # 🚩 默认为在职  
+    # 3. Basic info
+    name = models.CharField(max_length=100, verbose_name="Name")
+    role = models.CharField(max_length=100, blank=True, null=True, default='General Stylist')
+    specialty = models.CharField(max_length=200, blank=True, null=True, verbose_name="Specialty")
+    phone = models.CharField(max_length=20, blank=True, null=True, verbose_name="Phone Number")
+    image = models.ImageField(upload_to='staff_images/', blank=True, null=True, verbose_name="Photo")
+    is_active = models.BooleanField(default=True, verbose_name="Active")
+
+    @property
+    def has_valid_image(self):
+        return bool(self.image and self.image.storage.exists(self.image.name))
+
     def __str__(self):
-        # 统一返回格式
+    # Uniform return format
         return f"{self.name} ({self.role})"
     
     
 class Service(models.Model):
-    # 同样通过 ForeignKey 锁定在该店的业务范围
-    salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='services', verbose_name="所属店铺")
+    # Link to Salon
+    salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='services', verbose_name="Salon")
     name = models.CharField(max_length=100, verbose_name="Services")
     min_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     max_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     
-    # 🚩 增加一个给顾客看的提示词
+    # Note for customers
     price_note = models.CharField(
         max_length=200, 
         blank=True, 
         default="Price varies by age and hair length/style."
     )
-    duration_minutes = models.IntegerField(default=30, help_text="平均所需分钟数")
+    duration_minutes = models.IntegerField(default=30, help_text="Average duration in minutes")
     is_active = models.BooleanField(default=True)    
     def __str__(self):
         return f"{self.name} (RM {self.min_price} - {self.max_price})"
@@ -65,10 +75,10 @@ class Service(models.Model):
     
 class Booking(models.Model):
     STATUS_CHOICES = [
-        ('pending', '等待中'),
-        ('confirmed', '已确认'),
-        ('completed', '已完成'),
-        ('cancelled', '已取消'),
+        ('pending', 'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
     ]
 
     salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='bookings')
@@ -76,8 +86,8 @@ class Booking(models.Model):
     staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='bookings')
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='bookings')
     
-    booking_date = models.DateField() # 预约日期
-    timeslot = models.TimeField()     # 预约时间点
+    booking_date = models.DateField() # Booking Date
+    timeslot = models.TimeField()     # Timeslot
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -94,8 +104,11 @@ class UserProfile(models.Model):
     ]
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='none')
-    # 如果是商家，可以预留一个字段判断是否填了店名
+    # For merchants, determine if they setup salon
     has_setup_salon = models.BooleanField(default=False)
+    # User Avatar
+    avatar = models.ImageField(upload_to='avatars/', blank=True, null=True, verbose_name="Profile Picture")
+
 
     def __str__(self):
         return f"{self.user.username} - {self.role}"

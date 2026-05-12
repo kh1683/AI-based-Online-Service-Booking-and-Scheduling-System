@@ -1,10 +1,10 @@
 {% extends 'services/base.html' %}
 
-{% block title %}新增员工 | {{ salon.name }}{% endblock %}
+{% block title %}Add Staff | {{ salon.name }}{% endblock %}
 
 {% block header_content %}
-    <h1 class="display-5 fw-bold"><i class="bi bi-person-plus"></i> 添加团队成员</h1>
-    <p class="lead">为您的店铺 "{{ salon.name }}" 录入新的专业人员</p>
+    <h1 class="display-5 fw-bold"><i class="bi bi-person-plus"></i> Add Team Members</h1>
+    <p class="lead">Register new professionals for your salon "{{ salon.name }}" </p>
 {% endblock %}
 
 {% block content %}
@@ -30,9 +30,9 @@
 
                     <div class="d-grid gap-2 mt-4">
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm">
-                            <i class="bi bi-check-circle"></i> 保存员工信息
+                            <i class="bi bi-check-circle"></i> Save Staff Info
                         </button>
-                        <a href="{% url 'dashboard' %}" class="btn btn-link text-muted">取消并返回</a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-link text-muted">Cancel & Go Back</a>
                     </div>
                 </form>
             </div>

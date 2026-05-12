@@ -2,22 +2,22 @@
 {% block content %}
 <div class="row justify-content-center text-center mt-5">
     <div class="col-md-8">
-        <h2 class="mb-4">欢迎加入！请选择您的身份</h2>
+        <h2 class="mb-4">Welcome! Please select your role</h2>
         <div class="row">
             <div class="col-md-6 mb-3">
                 <div class="card shadow-sm p-4 h-100">
                     <i class="bi bi-person-heart display-4 text-primary mb-3"></i>
-                    <h4>我是客户</h4>
-                    <p class="text-muted">我想预约专业的美容、理发或诊所服务</p>
-                    <a href="{% url 'salon_list' %}" class="btn btn-outline-primary mt-auto">开始探索</a>
+                    <h4>I am a Customer</h4>
+                    <p class="text-muted">I want to book professional beauty, hair, or clinic services</p>
+                    <a href="{% url 'salon_list' %}" class="btn btn-outline-primary mt-auto">Start Exploring</a>
                 </div>
             </div>
             <div class="col-md-6 mb-3">
                 <div class="card shadow-sm p-4 h-100">
                     <i class="bi bi-shop display-4 text-theme-accent mb-3"></i>
-                    <h4>我是店主</h4>
-                    <p class="text-muted">我想管理我的店面、员工并启用 AI 调度</p>
-                    <a href="{% url 'create_salon' %}" class="btn btn-primary mt-auto">注册我的店铺</a>
+                    <h4>I am a Salon Owner</h4>
+                    <p class="text-muted">I want to manage my salon, staff, and enable AI scheduling</p>
+                    <a href="{% url 'create_salon' %}" class="btn btn-primary mt-auto">Register My Salon</a>
                 </div>
             </div>
         </div>

@@ -145,3 +145,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # 设置为 True 确保 Session 在每次请求时都会更新（保持活跃状态）
 SESSION_SAVE_EVERY_REQUEST = True
+
+import os
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

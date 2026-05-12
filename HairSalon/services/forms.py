@@ -1,15 +1,15 @@
 from django import forms
-from .models import Staff, Service, Booking
+from .models import Staff, Service, Booking, Salon
 
 class StaffForm(forms.ModelForm):
     class Meta:
         model = Staff
-        # 注意：这里排除 salon，因为我们会在后端自动绑定
+        # Note: we exclude salon here because we auto-bind it in the backend
         fields = ['name', 'specialty', 'phone'] 
         widgets = {
-            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '员工姓名'}),
-            'specialty': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '专业技能'}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '联系电话'}),
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Staff Name'}),
+            'specialty': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Specialty'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone Number'}),
         }
         
 class ServiceForm(forms.ModelForm):
@@ -21,7 +21,7 @@ class ServiceForm(forms.ModelForm):
             'min_price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Min Price'}),
             'max_price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Max Price'}),
             'price_note': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Depends on hair length'}),
-            'duration_minutes': forms.NumberInput(attrs={'placeholder': '例如: 60'}),
+            'duration_minutes': forms.NumberInput(attrs={'placeholder': 'e.g., 60'}),
         }
         
 class BookingForm(forms.ModelForm):
@@ -34,17 +34,53 @@ class BookingForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
-        salon = kwargs.pop('salon', None) # 从视图传进来的 salon 实例
+        salon = kwargs.pop('salon', None) # Salon instance passed from view
         super(BookingForm, self).__init__(*args, **kwargs)
         if salon:
-            # 🚩 核心逻辑：只显示属于这家店的员工和服务
+            # Core logic: only show staff and services belonging to this salon
             self.fields['staff'].queryset = Staff.objects.filter(salon=salon)
             self.fields['service'].queryset = Service.objects.filter(salon=salon)
             
-        # 美化所有字段
+            # Make staff selection optional for auto-assignment
+            self.fields['staff'].required = False
+            self.fields['staff'].empty_label = "Any Available Stylist (Auto Arrange)"
+            
+        # Beautify all fields
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control'})
-            
-            
-            
-            
+        
+        
+class SalonForm(forms.ModelForm):
+    class Meta:
+        model = Salon
+        # Fields to be filled by merchant, must match Salon model fields
+        fields = ['name', 'location', 'contact_number', 'description', 'image']
+        
+        # Add Bootstrap styling for prettier inputs
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Salon Name'}),
+            'location': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Enter Address'}),
+            'contact_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Contact Number'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+            'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+
+from django.contrib.auth.models import User
+from .models import UserProfile
+
+class UserForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username']
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['avatar']
+        widgets = {
+            'avatar': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+        }
+

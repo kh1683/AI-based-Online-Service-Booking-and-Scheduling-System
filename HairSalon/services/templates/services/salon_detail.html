@@ -1,74 +1,88 @@
 {% extends 'services/base.html' %}
 
+{% block title %}{{ salon.name }} | AI-Booking{% endblock %}
 
-<div class="container mt-4">
-    <div class="p-4 text-center shadow-lg" 
-         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                border-radius: 24px; 
-                min-height: 160px; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center;">
-        
-        <div>
-            <h1 class="display-4 fw-bold text-white mb-1">{{ salon.name }}</h1>
-            <p class="lead text-white-50 mb-0">
-                <i class="bi bi-geo-alt-fill me-1"></i> {{ salon.location }}
-            </p>
-        </div>
-    </div>
-</div>
+{% block header_content %}
+    {% if salon.has_valid_image %}
+    <style>
+        .main-header {
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('{{ salon.image.url }}') !important;
+            background-size: cover !important;
+            background-position: center !important;
+        }
+    </style>
+    {% endif %}
+    <h1 class="display-4 fw-bold mb-2">{{ salon.name }}</h1>
+    <p class="lead mb-0 text-white-50">
+        <i class="bi bi-geo-alt-fill me-1"></i> {{ salon.location }}
+    </p>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="p-4 text-center shadow-lg" 
-         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                border-radius: 24px; 
-                min-height: 160px; 
-                display: flex; 
-                align-items: center; 
-                justify-content: center;">
-        
-        <div>
-            <h1 class="display-4 fw-bold text-white mb-1">{{ salon.name }}</h1>
-            <p class="lead text-white-50 mb-0">
-                <i class="bi bi-geo-alt-fill me-1"></i> {{ salon.location }}
-            </p>
+<div class="container mt-n4">
+    <!-- Back Button -->
+    <div class="mb-4" style="position: relative; z-index: 5;">
+        <a href="{% url 'salon_list' %}" class="btn btn-light rounded-pill px-4 shadow-sm border" style="transform: translateY(-20px);">
+            <i class="bi bi-arrow-left me-2"></i> Back to Salons
+        </a>
+    </div>
+
+    <div class="row align-items-center mb-4">
+        <div class="col-md-8">
+            <h3 class="fw-bold text-theme-primary mb-0"><i class="bi bi-stars me-2"></i>Our Services</h3>
+            <p class="text-muted mt-1 mb-0">Explore the treatments we offer</p>
         </div>
     </div>
-</div>
-<div class="container mt-n4">
-    <h4 class="fw-bold mb-4">Our Services</h4>
     
-        <div class="row g-3">
-            {% for service in services %}
-            <div class="col-md-6">
-                <div class="card h-100 shadow-sm border-0" style="border-radius: 15px;">
-                    <div class="card-body d-flex justify-content-between align-items-center">
+    <div class="row g-4">
+        {% for service in services %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm border-0 position-relative" style="border-radius: 20px; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 1rem 3rem rgba(0,0,0,.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 .125rem .25rem rgba(0,0,0,.075)'">
+                <!-- A stylish top border accent -->
+                <div class="position-absolute top-0 start-0 w-100" style="height: 5px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+                
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="fw-bold mb-0 text-dark">{{ service.name }}</h5>
+                        <div class="bg-light text-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 45px; height: 45px; flex-shrink: 0;">
+                            <i class="bi bi-scissors fs-5"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-auto">
+                        <div class="d-flex align-items-center text-muted mb-2">
+                            <i class="bi bi-clock me-2 text-primary"></i> 
+                            <span class="small fw-medium">{{ service.duration_minutes }} Mins</span>
+                        </div>
+                        {% if service.price_note %}
+                        <div class="text-secondary small d-flex align-items-start mt-2">
+                            <i class="bi bi-info-circle me-2 mt-1"></i>
+                            <span style="font-size: 0.85rem;">{{ service.price_note }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr class="my-4 text-muted" style="opacity: 0.1;">
+                    
+                    <div class="d-flex justify-content-between align-items-center mt-2">
                         <div>
-                            <h5 class="fw-bold mb-1">{{ service.name }}</h5>
-                            <div class="text-muted small">
-                                <i class="bi bi-clock me-1"></i> 约 {{ service.duration_minutes }} 分钟
-                            </div>
-                            {% if service.price_note %}
-                            <div class="extra-small text-secondary mt-1" style="font-size: 0.75rem;">
-                                * {{ service.price_note }}
-                            </div>
-                            {% endif %}
+                            <span class="text-muted small d-block mb-1">Price Range</span>
+                            <span class="text-theme-primary fw-bold fs-5">RM {{ service.min_price|floatformat:0 }} - {{ service.max_price|floatformat:0 }}</span>
                         </div>
-                        <div class="text-end">
-                            <span class="text-primary fw-bold fs-5">RM {{ service.min_price }} - {{ service.max_price }}</span>
-                            <div class="mt-2">
-                                <a href="{% url 'create_booking' salon.id %}?service={{ service.id }}" class="btn btn-dark btn-sm rounded-pill px-3">Book Now</a>
-                            </div>
-                        </div>
+                        <a href="{% url 'create_booking' salon.id %}?service={{ service.id }}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                            Book
+                        </a>
                     </div>
                 </div>
             </div>
-            {% empty %}
-            <p class="text-muted">这家店暂时还没有提供服务项目。</p>
-            {% endfor %}
         </div>
+        {% empty %}
+        <div class="col-12 text-center py-5">
+            <div class="text-muted mb-3"><i class="bi bi-emoji-frown fs-1"></i></div>
+            <h5 class="text-muted">No services available yet.</h5>
+            <p class="text-muted">Please check back later.</p>
+        </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}

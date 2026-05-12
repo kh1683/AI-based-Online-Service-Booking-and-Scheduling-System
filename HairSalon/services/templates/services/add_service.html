@@ -1,10 +1,10 @@
 {% extends 'services/base.html' %}
 
-{% block title %}新增服务 | {{ salon.name }}{% endblock %}
+{% block title %}Add Service | {{ salon.name }}{% endblock %}
 
 {% block header_content %}
-    <h1 class="display-5 fw-bold"><i class="bi bi-scissors"></i> 配置服务项目</h1>
-    <p class="lead">定义您的服务名称、价格以及预期的服务时长</p>
+    <h1 class="display-5 fw-bold"><i class="bi bi-scissors"></i> Configure Services</h1>
+    <p class="lead">Define your service name, price, and expected duration</p>
 {% endblock %}
 
 {% block content %}
@@ -27,9 +27,9 @@
 
                     <div class="d-grid gap-2 mt-4">
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm" style="background-color: #6f42c1; border-color: #6f42c1;">
-                            <i class="bi bi-plus-lg"></i> 确认添加服务
+                            <i class="bi bi-plus-lg"></i> Add Service
                         </button>
-                        <a href="{% url 'dashboard' %}" class="btn btn-link text-muted">返回仪表盘</a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-link text-muted">Back to Dashboard</a>
                     </div>
                 </form>
             </div>

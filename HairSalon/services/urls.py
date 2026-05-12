@@ -3,11 +3,13 @@ from . import views
 from services import views
 
 urlpatterns = [
-    # 🚩 核心：这里是空字符串，代表根目录 http://127.0.0.1:8000/
+    
     path('', views.salon_list, name='home'),
-    # 账号相关
+    
     path('register/', views.register, name='register'),
+    path('profile/', views.profile, name='profile'),
     path('onboarding/', views.onboarding_choice, name='onboarding_choice'),
+    path('change-password/', views.custom_password_change, name='custom_password_change'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('dashboard/', views.salon_dashboard, name='dashboard'),
     # path('add-staff/', views.add_staff, name='add_staff'),

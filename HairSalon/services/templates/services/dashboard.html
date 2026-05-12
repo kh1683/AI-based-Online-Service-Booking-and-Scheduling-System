@@ -3,15 +3,29 @@
 {% block title %}{{ salon.name }} | 仪表盘{% endblock %}
 
 {% block header_content %}
-    <h1 class="display-4 fw-bold">欢迎来到 {{ salon.name }}</h1>
-    <p class="lead"><i class="bi bi-geo-alt-fill"></i> 地点：{{ salon.location }}</p>
-    <div class="mt-4">
-        <a href="{% url 'manage_staff' %}" class="btn btn-light px-4 py-2 me-2 shadow-sm"><i class="bi bi-person-plus"></i> 新增员工</a>
-        <a href="{% url 'manage_services' %}" class="btn btn-outline-light px-4 py-2 shadow-sm"><i class="bi bi-scissors"></i> 新增服务</a>
-    </div>
-    <div class="row g-4 mt-n4 mb-5"> 
-    </div>
-    <div class="row g-4 mt-n4">
+{% if salon.image %}
+<style>
+    .main-header {
+        background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        url('{{ salon.image.url }}') !important;
+        background-size: cover !important;
+        background-position: center !important;
+    }
+</style>
+{% endif %}
+<h1 class="display-4 fw-bold">Welcome to {{ salon.name }}</h1>
+<p class="lead"><i class="bi bi-geo-alt-fill"></i> Location:{{ salon.location }}</p>
+<div class="mt-4">
+    <a href="{% url 'manage_staff' %}" class="btn btn-light px-4 py-2 me-2 shadow-sm"><i class="bi bi-person-plus"></i>
+        Add Staff</a>
+    <a href="{% url 'manage_services' %}" class="btn btn-outline-light px-4 py-2 me-2 shadow-sm"><i
+            class="bi bi-scissors"></i> Add Service</a>
+    <a href="{% url 'salon_list' %}" class="btn btn-outline-light px-4 py-2 shadow-sm"><i class="bi bi-shop"></i> Browse Market</a>
+</div>
+{% endblock %}
+<div class="row g-4 mt-n4 mb-5">
+</div>
+<div class="row g-4 mt-n4">
     <div class="col-md-4">
         <div class="card border-0 shadow-sm bg-white p-3" style="border-radius: 20px;">
             <div class="d-flex align-items-center">
@@ -54,21 +68,22 @@
         </div>
     </div>
 </div>
-{% endblock %}
+
 
 
 
 
 {% block content %}
 {% if busy_slots %}
-<div class="alert alert-warning border-0 shadow-sm d-flex align-items-center mb-4" style="background-color: #fff4e5; border-radius: 15px;">
+<div class="alert alert-warning border-0 shadow-sm d-flex align-items-center mb-4"
+    style="background-color: #fff4e5; border-radius: 15px;">
     <div class="me-3 fs-3 text-warning">
         <i class="bi bi-robot"></i>
     </div>
     <div>
-        <h6 class="mb-1 fw-bold text-dark">AI 调度建议</h6>
+        <h6 class="mb-1 fw-bold text-dark">AI Scheduling Suggestions</h6>
         <p class="mb-0 text-muted small">
-            检测到今日 <span class="badge bg-warning text-dark">{{ busy_slots|join:", " }}</span> 时段预约较集中，建议增加人手或分流客户。
+            Detected busy slots today: <span class="badge bg-warning text-dark">{{ busy_slots|join:", " }}</span>. Consider adding staff or rerouting customers.
         </p>
     </div>
 </div>
@@ -77,7 +92,8 @@
     <div class="col-12">
         <div class="card shadow-sm">
             <div class="card-body">
-                <h4 class="card-title text-theme-primary mb-4"><i class="bi bi-graph-up-arrow"></i> 业务流量预测 (AI Insight)</h4>
+                <h4 class="card-title text-theme-primary mb-4"><i class="bi bi-graph-up-arrow"></i> Traffic Forecast (AI Insight)
+                </h4>
                 <canvas id="bookingChart" style="max-height: 300px;"></canvas>
             </div>
         </div>
@@ -88,32 +104,37 @@
         <div class="card shadow-sm border-0" style="border-left: 5px solid #667eea !important;">
             <div class="card-body">
                 <h4 class="card-title text-theme-primary mb-4">
-                    <i class="bi bi-bell-fill"></i> 待处理预约 
+                    <i class="bi bi-bell-fill"></i> Pending Bookings
                     <span class="badge rounded-pill bg-danger ms-2">{{ pending_bookings.count }}</span>
                 </h4>
-                
+
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>客户</th>
-                                <th>服务</th>
-                                <th>员工</th>
-                                <th>预约时间</th>
-                                <th>操作</th>
+                                <th>Customer</th>
+                                <th>Service</th>
+                                <th>Staff</th>
+                                <th>Booking Time</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for booking in pending_bookings %}
-                            <tr {% if booking.status == 'pending' %}class="table-warning"{% endif %}>
+                            {% if booking.status == 'pending' %}
+                            <tr class="table-warning">
+                            {% else %}
+                            <tr>
+                            {% endif %}
 
                                 <td class="fw-bold">{{ booking.customer.username }}</td>
                                 <td>{{ booking.service.name }}</td>
                                 <td>{{ booking.staff.name }}
                                     {% if booking.is_real_conflict %}
-                                        <br><small class="text-danger"><i class="bi bi-exclamation-triangle"></i> 时间已被占用</small>
+                                    <br><small class="text-danger"><i class="bi bi-exclamation-triangle"></i>
+                                        Time Slot Taken</small>
                                     {% else %}
-                                        <br><small class="text-muted"><i class="bi bi-clock"></i> 等待审核</small>
+                                    <br><small class="text-muted"><i class="bi bi-clock"></i> Pending Approval</small>
                                     {% endif %}
                                 </td>
                                 <td>
@@ -121,16 +142,18 @@
                                     <small class="text-muted">{{ booking.timeslot }}</small>
                                 </td>
                                 <td>
-                                    <a href="{% url 'approve_booking' booking.id %}" class="btn btn-sm btn-primary shadow-sm">
-                                        <i class="bi bi-check2-circle"></i> 确认
+                                    <a href="{% url 'approve_booking' booking.id %}"
+                                        class="btn btn-sm btn-primary shadow-sm">
+                                        <i class="bi bi-check2-circle"></i> Approve
                                     </a>
-                                    <a href="{% url 'reject_booking' booking.id %}" class="btn btn-sm btn-outline-danger" 
-   onclick="return confirm('确定要拒绝这个预约吗？')">拒绝</a>
+                                    <a href="{% url 'reject_booking' booking.id %}"
+                                        class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('确定要Reject这个预约吗？')">Reject</a>
                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">暂无新的预约申请</td>
+                                <td colspan="5" class="text-center py-4 text-muted">No new booking requests</td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -146,16 +169,16 @@
         <div class="card shadow-sm border-0" style="border-left: 5px solid #28a745 !important;">
             <div class="card-body">
                 <h4 class="card-title text-success mb-4">
-                    <i class="bi bi-calendar-check-fill"></i> 已确认日程
+                    <i class="bi bi-calendar-check-fill"></i> Confirmed Schedule
                 </h4>
                 <div class="table-responsive">
                     <table class="table table-sm align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>客户</th>
-                                <th>员工</th>
-                                <th>时间</th>
-                                <th>状态</th>
+                                <th>Customer</th>
+                                <th>Staff</th>
+                                <th>Time</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -164,10 +187,12 @@
                                 <td>{{ booking.customer.username }}</td>
                                 <td>{{ booking.staff.name }}</td>
                                 <td>{{ booking.booking_date }} | {{ booking.timeslot }}</td>
-                                <td><span class="badge bg-success">已就绪</span></td>
+                                <td><span class="badge bg-success">Ready</span></td>
                             </tr>
                             {% empty %}
-                            <tr><td colspan="4" class="text-center text-muted">今日暂无确认行程</td></tr>
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No confirmed schedule today</td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -180,18 +205,18 @@
     <div class="col-md-5 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h4 class="card-title mb-4 text-theme-primary"><i class="bi bi-people"></i> 我的团队</h4>
+                <h4 class="card-title mb-4 text-theme-primary"><i class="bi bi-people"></i> My Team</h4>
                 <div class="list-group list-group-flush">
                     {% for staff in staffs %}
-                        <div class="list-group-item d-flex justify-content-between align-items-center px-0">
-                            <div>
-                                <h6 class="mb-0">{{ staff.name }}</h6>
-                                <small class="text-muted">{{ staff.specialty }}</small>
-                            </div>
-                            <span class="badge-ai-status">在职</span>
+                    <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <div>
+                            <h6 class="mb-0">{{ staff.name }}</h6>
+                            <small class="text-muted">{{ staff.specialty }}</small>
                         </div>
+                        <span class="badge-ai-status">Active</span>
+                    </div>
                     {% empty %}
-                        <p class="text-muted text-center my-4">点击上方按钮添加你的第一位员工</p>
+                    <p class="text-muted text-center my-4">Click the button above to add your first staff</p>
                     {% endfor %}
                 </div>
             </div>
@@ -201,25 +226,27 @@
     <div class="col-md-7 mb-4">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h4 class="card-title mb-4 text-theme-accent"><i class="bi bi-list-stars"></i> 服务项目</h4>
+                <h4 class="card-title mb-4 text-theme-accent"><i class="bi bi-list-stars"></i> Services</h4>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
-                                <th>项目</th>
-                                <th>价格 (RM)</th>
-                                <th>时长</th>
+                                <th>Item</th>
+                                <th>Price (RM)</th>
+                                <th>Duration</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for service in services %}
-                                <tr>
-                                    <td class="fw-bold">{{ service.name }}</td>
-                                    <td class="table-price">{{ service.price_range }}</td>
-                                    <td><span class="badge-ai-time px-3 py-2">{{ service.duration }} min</span></td>
-                                </tr>
+                            <tr>
+                                <td class="fw-bold">{{ service.name }}</td>
+                                <td class="table-price">{{ service.price_range }}</td>
+                                <td><span class="badge-ai-time px-3 py-2">{{ service.duration }} min</span></td>
+                            </tr>
                             {% empty %}
-                                <tr><td colspan="3" class="text-center py-4 text-muted">暂无服务，请先新增。</td></tr>
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-muted">No services yet. Please add one.</td>
+                            </tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -229,37 +256,42 @@
     </div>
 </div>
 
+{{ chart_labels|json_script:"chartLabels" }}
+{{ chart_data|json_script:"chartData" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 
-    document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('bookingChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: {{ chart_labels|safe|default:"['周一', '周二', '周三', '周四', '周五', '周六', '周日']" }}, // 之后从后端传真实数据
-            datasets: [{
-                label: '预约数量',
-                data: {{ chart_data|safe|default:"[0, 0, 0, 0, 0, 0, 0]" }}, // 模拟数据
-                borderColor: '#667eea',
-                backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                fill: true,
-                tension: 0.4
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('bookingChart').getContext('2d');
+        const labels = JSON.parse(document.getElementById('chartLabels').textContent);
+        const data = JSON.parse(document.getElementById('chartData').textContent);
+        
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels, // Future: fetch real data from backend
+        datasets: [{
+            label: 'Number of Bookings',
+            data: data, // Mock data
+        borderColor: '#667eea',
+        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+        fill: true,
+        tension: 0.4
             }]
         },
         options: {
-                    responsive: true,
-                    maintainAspectRatio: false, // 🚩 让图表填满高度
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1 } // 因为预约数是整数
-                        }
-                    }
-                }
+        responsive: true,
+        maintainAspectRatio: false, 
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { stepSize: 1 } 
+            }
+        }
+    }
 
         });
     });
