@@ -14,6 +14,7 @@ import random
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
+from .ai_logic import get_ai_forecast
 
 @login_required
 def salon_dashboard(request):
@@ -41,10 +42,12 @@ def salon_dashboard(request):
     
     staffs = salon.staffs.all()
     services = salon.services.all()
-    last_7_days = []
-    booking_counts = []
-    chart_labels = ['5-03', '5-04', '5-05', '5-06', '5-07', '5-08', '5-09']
-    chart_data = [2, 5, 1, 8, 4, 10, 3]
+    
+    forecast_data = get_ai_forecast(salon.id)
+    if forecast_data:
+        forecast_labels, forecast_values = forecast_data
+    else:
+        forecast_labels, forecast_values = [], []
     
     today = date.today()
     hourly_stats = salon.bookings.filter(booking_date=today, status='confirmed') \
@@ -57,12 +60,7 @@ def salon_dashboard(request):
     pending_bookings = salon.bookings.filter(status='pending').order_by('booking_date', 'timeslot')
     confirmed_bookings = salon.bookings.filter(status='confirmed').order_by('booking_date', 'timeslot')
     
-    for i in range(6, -1, -1):
-        day = timezone.now().date() - timedelta(days=i)
-        count = salon.bookings.filter(booking_date=day).count()
-        last_7_days.append(day.strftime('%m-%d'))
-        booking_counts.append(count)
-    
+        
     
     
     for b in pending_bookings:
@@ -85,8 +83,8 @@ def salon_dashboard(request):
         'busy_slots': busy_slots,
         'hourly_stats': hourly_stats,
         
-        'chart_labels': chart_labels,
-        'chart_data': chart_data,
+        'forecast_labels': forecast_labels,
+        'forecast_values': forecast_values,
         
         'staff_count': staff_count,
         'service_count': service_count,
@@ -325,7 +323,7 @@ def create_salon(request):
         
         if existing_salon:
             messages.info(request, "You already have a salon.")
-            return redirect('merchant_dashboard')
+            return redirect('dashboard')
         form = SalonForm()
     return render(request, 'services/create_salon.html', {'form': form})
 
@@ -335,7 +333,25 @@ def salon_list(request):
     salons = Salon.objects.all()
     return render(request, 'services/salon_list.html', {'salons': salons})  
 
+@login_required
+def merchant_dashboard(request):
+    salon = getattr(request.user, 'salon', None)
+    if not salon:
+        return redirect('create_salon')
 
+    # 调用 AI 逻辑
+    forecast_data = get_ai_forecast(salon.id)
+    
+    if forecast_data:
+        labels, values = forecast_data
+    else:
+        # 数据不足时的保底数据
+        labels, values = [], []
+
+    return render(request, 'services/dashboard.html', {
+        'forecast_labels': labels,
+        'forecast_values': values,
+    })
 
 @login_required
 def my_bookings(request):
@@ -526,7 +542,7 @@ def home_router(request):
     elif profile.role == 'merchant':
         if not profile.has_setup_salon:
             return redirect('create_salon')
-        return redirect('merchant_dashboard')
+        return redirect('dashboard')
     
     
     return render(request, 'services/onboarding.html')
