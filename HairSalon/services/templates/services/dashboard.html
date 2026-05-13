@@ -90,12 +90,11 @@
 {% endif %}
 <div class="row mb-4">
     <div class="col-12">
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <h4 class="card-title text-theme-primary mb-4"><i class="bi bi-graph-up-arrow"></i> Traffic Forecast (AI Insight)
-                </h4>
-                <canvas id="bookingChart" style="max-height: 300px;"></canvas>
-            </div>
+        <div class="card shadow border-0 p-4 mb-4">
+            <h5 class="fw-bold text-primary">
+                <i class="bi bi-cpu"></i> AI-Based Demand Forecast (Next 24 Hours)
+            </h5>
+            <canvas id="forecastChart" height="100"></canvas>
         </div>
     </div>
 </div>
@@ -256,45 +255,48 @@
     </div>
 </div>
 
-{{ chart_labels|json_script:"chartLabels" }}
-{{ chart_data|json_script:"chartData" }}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-
     document.addEventListener('DOMContentLoaded', function () {
-        const ctx = document.getElementById('bookingChart').getContext('2d');
-        const labels = JSON.parse(document.getElementById('chartLabels').textContent);
-        const data = JSON.parse(document.getElementById('chartData').textContent);
-        
+        const ctx = document.getElementById('forecastChart').getContext('2d');
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: labels, // Future: fetch real data from backend
-        datasets: [{
-            label: 'Number of Bookings',
-            data: data, // Mock data
-        borderColor: '#667eea',
-        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-        fill: true,
-        tension: 0.4
-            }]
-        },
-        options: {
-        responsive: true,
-        maintainAspectRatio: false, 
-        plugins: {
-            legend: { display: false }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: { stepSize: 1 } 
+                labels: {{ forecast_labels|safe }},
+                datasets: [{
+                    label: 'Predicted Customer Load',
+                    data: {{ forecast_values|safe }},
+                    borderColor: '#6f42c1', // 紫色显得比较 AI
+                    backgroundColor: 'rgba(111, 66, 193, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Business Hours (10:00 - 19:00)'
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        min: 0,
+                        max: 10,
+                        ticks: {
+                            stepSize: 2
+                        },
+                        title: {
+                            display: true,
+                            text: 'Expected Customers'
+                        }
+                    }
+                }
             }
-        }
-    }
-
         });
     });
-
 </script>
 {% endblock %}
