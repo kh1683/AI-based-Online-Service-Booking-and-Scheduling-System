@@ -275,17 +275,19 @@
             },
             options: {
                 responsive: true,
+                //maintainAspectRatio: false, // 允许手动控制高度
                 scales: {
                     x: {
                         title: {
                             display: true,
                             text: 'Business Hours (10:00 - 19:00)'
                         }
+                      
                     },
                     y: {
                         beginAtZero: true,
                         min: 0,
-                        max: 10,
+                        max: 5,
                         ticks: {
                             stepSize: 2
                         },
@@ -293,7 +295,9 @@
                             display: true,
                             text: 'Expected Customers'
                         }
-                    }
+                    },
+                   
+                    
                 }
             }
         });

@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Salon, Staff, Service, Booking, UserProfile
-from .forms import StaffForm, ServiceForm, BookingForm, SalonForm, UserForm, UserProfileForm
+from .forms import StaffForm, ServiceForm, BookingForm, SalonForm, UserForm, UserProfileForm, SalonLocationForm, SalonImageForm
 from datetime import date, timedelta
 from django.db.models import Count
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
@@ -125,6 +125,12 @@ def salon_dashboard(request):
 
 @login_required
 def create_booking(request, salon_id):
+    # Block merchants from making bookings
+    user_profile = getattr(request.user, 'userprofile', None)
+    if user_profile and user_profile.role == 'merchant':
+        messages.error(request, 'Merchants cannot make bookings. Please use a customer account.')
+        return redirect('salon_list')
+
     salon = Salon.objects.get(id=salon_id)
     
     if request.method == 'POST':
@@ -273,6 +279,12 @@ class CustomUserCreationForm(UserCreationForm):
 
     class Meta(UserCreationForm.Meta):
         fields = UserCreationForm.Meta.fields + ('email',)
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError("This email is already registered. Please use a different email or log in.")
+        return email
         
 def register(request):
     if request.method == 'POST':
@@ -361,6 +373,21 @@ def my_bookings(request):
     return render(request, 'services/my_bookings.html', {
         'bookings': bookings
     })
+
+
+@login_required
+def cancel_booking(request, booking_id):
+    """Let customers cancel their own pending or confirmed bookings."""
+    booking = get_object_or_404(Booking, id=booking_id, customer=request.user)
+    
+    if booking.status in ['pending', 'confirmed']:
+        booking.status = 'cancelled'
+        booking.save()
+        messages.success(request, f'Your booking for {booking.service.name} on {booking.booking_date} has been cancelled.')
+    else:
+        messages.error(request, 'This booking cannot be cancelled.')
+    
+    return redirect('my_bookings')
     
 @login_required
 def manage_staff(request):
@@ -396,6 +423,21 @@ def toggle_staff_status(request, staff_id):
     
     status_text = "Active" if staff.is_active else "Inactive"
     messages.info(request, f"Staff {staff.name} status updated to {status_text}.")
+    return redirect('manage_staff')
+
+
+@login_required
+def edit_staff(request, staff_id):
+    """Edit an existing staff member."""
+    staff = get_object_or_404(Staff, id=staff_id, salon__owner=request.user)
+    
+    if request.method == 'POST':
+        form = StaffForm(request.POST, request.FILES, instance=staff)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Staff "{staff.name}" updated successfully!')
+        else:
+            messages.error(request, 'Please correct the errors and try again.')
     return redirect('manage_staff')
 
 
@@ -438,7 +480,23 @@ def toggle_service_status(request, service_id):
     
     
     return redirect('manage_services')
+
+
+@login_required
+def edit_service(request, service_id):
+    """Edit an existing service."""
+    service = get_object_or_404(Service, id=service_id, salon__owner=request.user)
     
+    if request.method == 'POST':
+        form = ServiceForm(request.POST, instance=service)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Service "{service.name}" updated successfully!')
+        else:
+            messages.error(request, 'Please correct the errors and try again.')
+    return redirect('manage_services')
+
+
 def salon_detail(request, salon_id):
     
     salon = get_object_or_404(Salon, id=salon_id)
@@ -561,12 +619,72 @@ def profile(request):
     else:
         user_form = UserForm(instance=request.user)
         profile_form = UserProfileForm(instance=user_profile)
-        
+
+    # Pass salon and location form for merchants
+    salon = None
+    location_form = None
+    salon_image_form = None
+    if user_profile.role == 'merchant':
+        salon = getattr(request.user, 'salon', None)
+        if salon:
+            location_form = SalonLocationForm(instance=salon)
+            salon_image_form = SalonImageForm(instance=salon)
+
     return render(request, 'services/profile.html', {
         'user_form': user_form,
         'profile_form': profile_form,
-        'user_profile': user_profile
+        'user_profile': user_profile,
+        'salon': salon,
+        'location_form': location_form,
+        'salon_image_form': salon_image_form,
     })
+
+
+@login_required
+def edit_salon_location(request):
+    """Handle merchant salon location update."""
+    user_profile = getattr(request.user, 'userprofile', None)
+    if not user_profile or user_profile.role != 'merchant':
+        messages.error(request, 'Only merchants can edit salon location.')
+        return redirect('profile')
+
+    salon = getattr(request.user, 'salon', None)
+    if not salon:
+        messages.error(request, 'You have not created a salon yet.')
+        return redirect('profile')
+
+    if request.method == 'POST':
+        location_form = SalonLocationForm(request.POST, instance=salon)
+        if location_form.is_valid():
+            location_form.save()
+            messages.success(request, 'Salon location updated successfully!')
+        else:
+            messages.error(request, 'Please enter a valid location.')
+    return redirect('profile')
+
+
+@login_required
+def edit_salon_image(request):
+    """Handle merchant salon image update."""
+    user_profile = getattr(request.user, 'userprofile', None)
+    if not user_profile or user_profile.role != 'merchant':
+        messages.error(request, 'Only merchants can edit salon image.')
+        return redirect('profile')
+
+    salon = getattr(request.user, 'salon', None)
+    if not salon:
+        messages.error(request, 'You have not created a salon yet.')
+        return redirect('profile')
+
+    if request.method == 'POST':
+        salon_image_form = SalonImageForm(request.POST, request.FILES, instance=salon)
+        if salon_image_form.is_valid():
+            salon_image_form.save()
+            messages.success(request, 'Salon image updated successfully!')
+        else:
+            messages.error(request, 'Please upload a valid image.')
+    return redirect('profile')
+
 
 @login_required
 def custom_password_change(request):

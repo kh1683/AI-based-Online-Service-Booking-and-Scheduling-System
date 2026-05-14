@@ -69,8 +69,12 @@
                             <span class="text-muted small d-block mb-1">Price Range</span>
                             <span class="text-theme-primary fw-bold fs-5">RM {{ service.min_price|floatformat:0 }} - {{ service.max_price|floatformat:0 }}</span>
                         </div>
-                        <a href="{% url 'create_booking' salon.id %}?service={{ service.id }}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
-                            Book
+                        <a href="{% url 'create_booking' salon.id %}?service={{ service.id }}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold{% if user.userprofile.role == 'merchant' %} disabled{% endif %}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;"{% if user.userprofile.role == 'merchant' %} onclick="return false;" title="Merchants cannot make bookings"{% endif %}>
+                            {% if user.userprofile.role == 'merchant' %}
+                                <i class="bi bi-lock me-1"></i> Book
+                            {% else %}
+                                Book
+                            {% endif %}
                         </a>
                     </div>
                 </div>
