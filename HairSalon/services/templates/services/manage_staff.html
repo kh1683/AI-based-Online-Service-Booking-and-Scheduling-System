@@ -90,17 +90,27 @@
                                     {% endif %}
                                 </td>
                                 <td class="text-end pe-4">
-                                    <form action="{% url 'toggle_staff_status' staff.id %}" method="post" style="display:inline;">
-                                        {% csrf_token %}
-                                        {% if staff.is_active %}
-                                            <button type="submit" class="btn btn-outline-warning btn-sm rounded-pill px-3">Deactivate</button>
-                                        {% else %}
-                                            <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3">Re-activate</button>
-                                        {% endif %}
-                                    </form>
-                                </td>
-                                <td class="text-end pe-4">
-                                    <button class="btn btn-outline-danger btn-sm rounded-pill px-3">Remove</button>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <!-- Edit Button (Triggers Modal) -->
+                                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 edit-staff-btn" 
+                                                data-bs-toggle="modal" data-bs-target="#editStaffModal"
+                                                data-id="{{ staff.id }}" 
+                                                data-name="{{ staff.name }}"
+                                                data-role="{{ staff.role|default:'' }}"
+                                                data-specialty="{{ staff.specialty|default:'' }}"
+                                                data-phone="{{ staff.phone|default:'' }}">
+                                            <i class="bi bi-pencil-square me-1"></i> Edit
+                                        </button>
+
+                                        <form action="{% url 'toggle_staff_status' staff.id %}" method="post" style="display:inline;">
+                                            {% csrf_token %}
+                                            {% if staff.is_active %}
+                                                <button type="submit" class="btn btn-outline-warning btn-sm rounded-pill px-3">Deactivate</button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-outline-success btn-sm rounded-pill px-3">Re-activate</button>
+                                            {% endif %}
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                             {% empty %}
@@ -117,4 +127,75 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Staff Modal -->
+<div class="modal fade" id="editStaffModal" tabindex="-1" aria-labelledby="editStaffModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 15px;">
+            <div class="modal-header bg-light border-0">
+                <h5 class="modal-title fw-bold" id="editStaffModalLabel"><i class="bi bi-pencil-square text-primary"></i> Edit Staff</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editStaffForm" method="POST" action="" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Name</label>
+                        <input type="text" name="name" id="edit_staff_name" class="form-control" required style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Role/Position</label>
+                        <input type="text" name="role" id="edit_staff_role" class="form-control" style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Specialty</label>
+                        <input type="text" name="specialty" id="edit_staff_specialty" class="form-control" style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Phone Number</label>
+                        <input type="text" name="phone" id="edit_staff_phone" class="form-control" style="border-radius: 10px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Profile Picture (Optional)</label>
+                        <input type="file" name="image" class="form-control" accept="image/*" style="border-radius: 10px;">
+                        <div class="form-text small">Leave blank to keep current photo.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-success-soft { background-color: #e8f5e9; }
+    .bg-secondary-soft { background-color: #f5f5f5; }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editButtons = document.querySelectorAll('.edit-staff-btn');
+    const editForm = document.getElementById('editStaffForm');
+
+    editButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const name = this.getAttribute('data-name');
+            const role = this.getAttribute('data-role');
+            const specialty = this.getAttribute('data-specialty');
+            const phone = this.getAttribute('data-phone');
+
+            document.getElementById('edit_staff_name').value = name;
+            document.getElementById('edit_staff_role').value = role;
+            document.getElementById('edit_staff_specialty').value = specialty;
+            document.getElementById('edit_staff_phone').value = phone;
+
+            editForm.action = "{% url 'edit_staff' 0 %}".replace('0', id);
+        });
+    });
+});
+</script>
 {% endblock %}

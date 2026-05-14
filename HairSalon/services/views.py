@@ -3,12 +3,14 @@ from django.contrib.auth.decorators import login_required
 from .models import Salon, Staff, Service, Booking, UserProfile
 from .forms import StaffForm, ServiceForm, BookingForm, SalonForm, UserForm, UserProfileForm, SalonLocationForm, SalonImageForm
 from datetime import date, timedelta
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from django.contrib.auth import login, update_session_auth_hash
 from django import forms
 from django.utils import timezone
+from django.core.paginator import Paginator
 from django.contrib import messages
+
 from datetime import datetime,time
 import random
 from django.core.mail import send_mail
@@ -169,19 +171,26 @@ def create_booking(request, salon_id):
             
             booking.salon = salon
             booking.customer = request.user 
+            # Calculate new booking's expected end time
+            new_start_dt = datetime.combine(date.today(), booking.timeslot)
+            new_end_dt = new_start_dt + timedelta(minutes=booking.service.duration_minutes)
+            new_end_time = new_end_dt.time()
 
-            
             if not getattr(booking, 'staff_id', None):
                 active_staffs = Staff.objects.filter(salon=salon, is_active=True)
                 available_staff = None
                 
                 for staff in active_staffs:
+                    # Overlap logic: (existing_start < new_end) AND (existing_end > new_start)
                     conflict = Booking.objects.filter(
                         staff=staff,
                         booking_date=booking.booking_date,
-                        timeslot=booking.timeslot,
                         status__in=['pending', 'confirmed']
+                    ).filter(
+                        timeslot__lt=new_end_time,
+                        end_time__gt=booking.timeslot
                     ).exists()
+                    
                     if not conflict:
                         available_staff = staff
                         break
@@ -193,31 +202,30 @@ def create_booking(request, salon_id):
                     booking.save()
                     return redirect('my_bookings')
                 else:
-                    messages.error(request, "❌ Sorry, no stylists are available at this time. Please choose another time.")
+                    messages.error(request, "❌ Sorry, no stylists are available at this time due to overlapping appointments. Please choose another time.")
                     form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
                     form.fields['service'].queryset = Service.objects.filter(salon=salon)
                     return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
 
             else:
-                
+                # Specific staff check with overlap logic
                 conflict = Booking.objects.filter(
                     staff=booking.staff,
                     booking_date=booking.booking_date,
-                    timeslot=booking.timeslot,
-                    status='confirmed'
+                    status__in=['pending', 'confirmed']
+                ).filter(
+                    timeslot__lt=new_end_time,
+                    end_time__gt=booking.timeslot
                 ).exists()
+                if conflict:
+                    messages.error(request, f"❌ Sorry, {booking.staff.name} is busy during this time (including service cooling time). Please choose another time or stylist.")
+                    form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
+                    form.fields['service'].queryset = Service.objects.filter(salon=salon)
+                    return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
                 
-                if not conflict:
-                    
-                    booking.status = 'confirmed'
-                    messages.success(request, 'Appointment booked successfully! We look forward to seeing you.')
-                else:
-                    
-                    # Save as pending, let owner manage
-                    booking.status = 'pending'
-                    messages.warning(request, 'This time slot is busy. Your booking is pending for merchant approval.')
-                
+                booking.status = 'confirmed'
                 booking.save()
+                messages.success(request, f'Appointment confirmed with {booking.staff.name}!')
                 return redirect('my_bookings')
             
            
@@ -367,11 +375,19 @@ def merchant_dashboard(request):
 
 @login_required
 def my_bookings(request):
+    """View list of bookings for the logged-in customer with pagination."""
+    bookings_list = Booking.objects.filter(customer=request.user).order_by('-booking_date', '-timeslot')
     
-    bookings = Booking.objects.filter(customer=request.user).order_by('-booking_date', '-timeslot')
+    paginator = Paginator(bookings_list, 10) # Show 10 bookings per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    # Get elided page range (available in Django 3.2+)
+    elided_page_range = paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
     
     return render(request, 'services/my_bookings.html', {
-        'bookings': bookings
+        'page_obj': page_obj,
+        'elided_page_range': elided_page_range
     })
 
 
@@ -456,8 +472,11 @@ def manage_services(request):
             new_service.save()
             messages.success(request, "Service successfully added!")
             return redirect('manage_services')
+        else:
+            messages.error(request, 'Please correct the errors and try again.')
     else:
         form = ServiceForm()
+        
         
     return render(request, 'services/manage_services.html', {
         'services': services,
@@ -702,3 +721,4 @@ def custom_password_change(request):
     return render(request, 'services/password_change.html', {
         'form': form
     })
+
