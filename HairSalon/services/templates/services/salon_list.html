@@ -8,7 +8,7 @@
 {% block content %}
 <div class="row">
     {% for salon in salons %}
-    <div class="col-md-4 mb-4">
+    <div class="col-sm-6 col-md-4 col-lg-3 mb-4">
         <div class="card h-100 shadow-sm border-0" style="border-radius: 15px; transition: 0.3s;">
             {% if salon.has_valid_image %}
             <img src="{{ salon.image.url }}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1560066984-138dadb4c035?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80';"

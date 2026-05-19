@@ -230,7 +230,7 @@
                 document.getElementById('edit_duration_minutes').value = duration;
 
                 // 3. 动态改变 Form 的 action 提交路径
-                editForm.action = "{% url 'edit_service' 0 %}".replace('0', id);
+                editForm.action = "{% url 'edit_service' 99999 %}".replace('99999', id);
             });
         });
     });

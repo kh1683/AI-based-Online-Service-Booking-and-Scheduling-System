@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse
 from .models import Salon, Staff, Service, Booking, UserProfile
 from .forms import StaffForm, ServiceForm, BookingForm, SalonForm, UserForm, UserProfileForm, SalonLocationForm, SalonImageForm
 from datetime import date, timedelta
@@ -16,7 +17,7 @@ import random
 from django.core.mail import send_mail
 from django.contrib.auth.models import User
 from django.contrib.auth.hashers import check_password
-from .ai_logic import get_ai_forecast
+from .ai_logic import get_ai_forecast, get_optimal_time_slots
 
 @login_required
 def salon_dashboard(request):
@@ -51,6 +52,19 @@ def salon_dashboard(request):
     else:
         forecast_labels, forecast_values = [], []
     
+    # 2. 新增：统计最受欢迎的服务类型 (Popular Service Types)
+    service_counts = Booking.objects.filter(service__salon=salon)\
+        .values('service__name')\
+        .annotate(count=Count('id'))\
+        .order_by('-count')
+
+    service_labels = [item['service__name'] for item in service_counts]
+    service_data = [item['count'] for item in service_counts]
+
+    # 3. 新增：基本 KPIs 计数器
+    total_bookings = Booking.objects.filter(service__salon=salon).count()
+    pending_bookings_count = Booking.objects.filter(service__salon=salon, status='pending').count()
+    
     today = date.today()
     hourly_stats = salon.bookings.filter(booking_date=today, status='confirmed') \
                     .values('timeslot') \
@@ -58,12 +72,8 @@ def salon_dashboard(request):
                     .order_by('timeslot')
     busy_slots = [item['timeslot'].strftime('%H:%M') for item in hourly_stats if item['count'] >= 2]
     
-    
     pending_bookings = salon.bookings.filter(status='pending').order_by('booking_date', 'timeslot')
     confirmed_bookings = salon.bookings.filter(status='confirmed').order_by('booking_date', 'timeslot')
-    
-        
-    
     
     for b in pending_bookings:
         is_conflicted = salon.bookings.filter(
@@ -72,7 +82,6 @@ def salon_dashboard(request):
             timeslot=b.timeslot,
             status='confirmed' 
         ).exists()
-        
         
         b.is_real_conflict = is_conflicted
     
@@ -87,10 +96,14 @@ def salon_dashboard(request):
         
         'forecast_labels': forecast_labels,
         'forecast_values': forecast_values,
+        'service_labels': service_labels,
+        'service_data': service_data,
+        'total_bookings': total_bookings,
+        'pending_bookings_count': pending_bookings_count,
         
         'staff_count': staff_count,
         'service_count': service_count,
-        'pending_bookings': pending_bookings_list,  
+        'pending_bookings_list': pending_bookings_list,  
         'pending_count': pending_count,
     })
     
@@ -143,10 +156,10 @@ def create_booking(request, salon_id):
         if form.is_valid():
             booking = form.save(commit=False)
             
-            now = timezone.now() 
-            today = now.date()
+            now_local = timezone.localtime(timezone.now())
+            today = now_local.date()
             # 🚩 Validation 1: Check if date is in the past
-            if booking.booking_date < timezone.now().date():
+            if booking.booking_date < today:
                 messages.error(request, "You cannot book a date in the past!")
                 form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
                 form.fields['service'].queryset = Service.objects.filter(salon=salon)
@@ -163,11 +176,12 @@ def create_booking(request, salon_id):
                 return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
 
             # 🚩 3. If today, check if time has passed
-            if booking.booking_date == today and booking.timeslot < now.time():
+            if booking.booking_date == today and booking.timeslot < now_local.time():
                 messages.error(request, "❌ This time has already passed. Please select a later time.")
                 form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
                 form.fields['service'].queryset = Service.objects.filter(salon=salon)
                 return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
+
             
             booking.salon = salon
             booking.customer = request.user 
@@ -393,17 +407,27 @@ def my_bookings(request):
 
 @login_required
 def cancel_booking(request, booking_id):
-    """Let customers cancel their own pending or confirmed bookings."""
-    booking = get_object_or_404(Booking, id=booking_id, customer=request.user)
+    """Let customers cancel their own bookings, or salon owners cancel their salon's bookings."""
+    booking = get_object_or_404(Booking, id=booking_id)
     
+    is_customer = (booking.customer == request.user)
+    is_owner = (booking.salon.owner == request.user)
+    
+    if not (is_customer or is_owner):
+        messages.error(request, 'You do not have permission to cancel this booking.')
+        return redirect('home')
+        
     if booking.status in ['pending', 'confirmed']:
         booking.status = 'cancelled'
         booking.save()
-        messages.success(request, f'Your booking for {booking.service.name} on {booking.booking_date} has been cancelled.')
+        messages.success(request, f'The booking for {booking.service.name} on {booking.booking_date} has been cancelled.')
     else:
         messages.error(request, 'This booking cannot be cancelled.')
     
+    if is_owner:
+        return redirect('dashboard')
     return redirect('my_bookings')
+
     
 @login_required
 def manage_staff(request):
@@ -721,4 +745,16 @@ def custom_password_change(request):
     return render(request, 'services/password_change.html', {
         'form': form
     })
+
+def get_ai_recommendations(request):
+    salon_id = request.GET.get('salon_id')
+    date_str = request.GET.get('date') # 格式：2026-05-20
+    
+    if salon_id and date_str:
+        # 🚩 调用 AI 推荐引擎
+        recommendations = get_optimal_time_slots(salon_id, date_str)
+        return JsonResponse({'status': 'success', 'recommended_slots': recommendations})
+        
+    return JsonResponse({'status': 'error', 'message': 'Missing parameters'})
+
 

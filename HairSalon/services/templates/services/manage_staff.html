@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('edit_staff_specialty').value = specialty;
             document.getElementById('edit_staff_phone').value = phone;
 
-            editForm.action = "{% url 'edit_staff' 0 %}".replace('0', id);
+            editForm.action = "{% url 'edit_staff' 99999 %}".replace('99999', id);
         });
     });
 });

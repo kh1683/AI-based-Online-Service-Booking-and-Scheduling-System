@@ -13,6 +13,23 @@
             font-family: 'Segoe UI', Tahoma, sans-serif;
         }
 
+        /* Optimize layout width for large screen scaling and modern, friendly user experience */
+        .container {
+            max-width: 1440px !important;
+            width: 100% !important;
+        }
+
+        @media (min-width: 1600px) {
+            .container {
+                max-width: 85% !important;
+            }
+        }
+
+        /* Smooth scaling animations */
+        .container, .card, .main-header, .navbar {
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
         .main-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;

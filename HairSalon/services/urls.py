@@ -34,6 +34,7 @@ urlpatterns = [
     path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('verify-otp/', views.verify_otp, name='verify_otp'),
     # path('select-role/<str:role_choice>/', views.select_role, name='select_role'),
-    path('', views.home_router, name='home'),
     path('choose-role/<str:role_choice>/', views.choose_role, name='choose_role'),
+    path('', views.home_router, name='home'),
+    path('api/ai-recommendations/', views.get_ai_recommendations, name='ai_recommendations'),
 ]

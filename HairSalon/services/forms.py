@@ -47,8 +47,8 @@ class BookingForm(forms.ModelForm):
         model = Booking
         fields = ['service', 'staff', 'booking_date', 'timeslot']
         widgets = {
-            'booking_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'timeslot': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'booking_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'id': 'booking_date_input'}),
+            'timeslot': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control', 'id': 'booking_time_input'}),
         }
 
     def __init__(self, *args, **kwargs):
