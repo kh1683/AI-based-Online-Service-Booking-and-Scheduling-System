@@ -5,11 +5,13 @@ class StaffForm(forms.ModelForm):
     class Meta:
         model = Staff
         # Note: we exclude salon here because we auto-bind it in the backend
-        fields = ['name', 'specialty', 'phone'] 
+        fields = ['name', 'role', 'specialty', 'phone', 'image'] 
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Staff Name'}),
+            'role': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Senior Stylist'}),
             'specialty': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Specialty'}),
             'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Phone Number'}),
+            'image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
         }
         
 class ServiceForm(forms.ModelForm):
@@ -21,16 +23,32 @@ class ServiceForm(forms.ModelForm):
             'min_price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Min Price'}),
             'max_price': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Max Price'}),
             'price_note': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Depends on hair length'}),
-            'duration_minutes': forms.NumberInput(attrs={'placeholder': 'e.g., 60'}),
+            'duration_minutes': forms.NumberInput(attrs={'placeholder': 'e.g., 60', 'max': '300', 'min': '1'}),
         }
+        # 🚩 核心：价格逻辑校验
+    def clean(self):
+        cleaned_data = super().clean()
+        min_price = cleaned_data.get('min_price')
+        max_price = cleaned_data.get('max_price')
+        duration_minutes = cleaned_data.get('duration_minutes')
+
+        if min_price is not None and max_price is not None:
+            if max_price < min_price:
+                # 抛出错误给前端显示
+                self.add_error('max_price', "Max price cannot be lower than min price.")
+        
+        if duration_minutes and duration_minutes > 300:
+            self.add_error('duration_minutes', "Duration cannot exceed 300 minutes (5 hours).")
+            
+        return cleaned_data
         
 class BookingForm(forms.ModelForm):
     class Meta:
         model = Booking
         fields = ['service', 'staff', 'booking_date', 'timeslot']
         widgets = {
-            'booking_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'timeslot': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'booking_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control', 'id': 'booking_date_input'}),
+            'timeslot': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control', 'id': 'booking_time_input'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -65,6 +83,12 @@ class SalonForm(forms.ModelForm):
             'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 
+    def clean_image(self):
+        image = self.cleaned_data.get('image')
+        if not image:
+            raise forms.ValidationError("A salon photo is required. Please upload an image of your salon.")
+        return image
+
 from django.contrib.auth.models import User
 from .models import UserProfile
 
@@ -84,3 +108,27 @@ class UserProfileForm(forms.ModelForm):
             'avatar': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
 
+
+class SalonLocationForm(forms.ModelForm):
+    class Meta:
+        model = Salon
+        fields = ['location']
+        widgets = {
+            'location': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Enter your salon address',
+            }),
+        }
+
+
+class SalonImageForm(forms.ModelForm):
+    class Meta:
+        model = Salon
+        fields = ['image']
+        widgets = {
+            'image': forms.FileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*',
+            }),
+        }

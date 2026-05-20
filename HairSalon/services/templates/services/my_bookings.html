@@ -1,8 +1,9 @@
 {% extends 'services/base.html' %}
 
 {% block header_content %}
-    <div class="d-flex align-items-center justify-content-center">
-    <a href="javascript:history.back()" class="btn btn-light btn-sm rounded-circle shadow-sm me-3" style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+<div class="d-flex align-items-center justify-content-center">
+    <a href="javascript:history.back()" class="btn btn-light btn-sm rounded-circle shadow-sm me-3"
+        style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
         <i class="bi bi-arrow-left text-primary"></i>
     </a>
     <h1 class="display-5 fw-bold mb-0">My Appointments</h1>
@@ -24,54 +25,178 @@
                                 <th>Staff</th>
                                 <th>Date & Time</th>
                                 <th>Status</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for booking in bookings %}
+                            {% for booking in page_obj %}
                             <tr>
                                 <td class="fw-bold text-primary">{{ booking.service.name }}</td>
                                 <td>{{ booking.salon.name }}</td>
-                                <td>{{ booking.staff.name }}</td>
+                                <td>
+                                    <a href="{% url 'staff_detail' booking.staff.id %}" class="text-decoration-none fw-semibold text-secondary">
+                                        <i class="bi bi-person-fill text-primary me-1"></i>{{ booking.staff.name }}
+                                    </a>
+                                </td>
                                 <td>
                                     <div class="small fw-bold">{{ booking.booking_date }}</div>
                                     <div class="text-muted small">{{ booking.timeslot }}</div>
                                 </td>
                                 <td>
                                     {% if booking.status == 'confirmed' %}
-                                        <span class="badge bg-success-soft text-success px-3">
-                                            <i class="bi bi-check-circle-fill me-1"></i> Confirmed
-                                        </span>
+                                    <span class="badge bg-success-soft text-success px-3">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Confirmed
+                                    </span>
                                     {% elif booking.status == 'pending' %}
-                                        <span class="badge bg-warning-soft text-warning px-3">
-                                            <i class="bi bi-clock-history me-1"></i> Pending
-                                        </span>
+                                    <span class="badge bg-warning-soft text-warning px-3">
+                                        <i class="bi bi-clock-history me-1"></i> Pending
+                                    </span>
                                     {% else %}
-                                        <span class="badge bg-danger-soft text-danger px-3">Cancelled</span>
+                                    <span class="badge bg-danger-soft text-danger px-3">Cancelled</span>
                                     {% endif %}
                                 </td>
+                                 <td>
+                                     {% if booking.status == 'pending' or booking.status == 'confirmed' %}
+                                         <button type="button" 
+                                                 class="btn btn-sm btn-outline-danger rounded-pill px-3 cancel-btn"
+                                                 data-bs-toggle="modal" 
+                                                 data-bs-target="#cancelModal"
+                                                 data-booking-id="{{ booking.id }}"
+                                                 data-service-name="{{ booking.service.name }}"
+                                                 data-booking-date="{{ booking.booking_date }}">
+                                             <i class="bi bi-x-circle me-1"></i> Cancel
+                                         </button>
+                                     {% elif booking.status == 'cancelled' %}
+                                         <span class="text-muted small">—</span>
+                                     {% endif %}
+                                 </td>
                             </tr>
                             {% empty %}
                             <tr>
-                                <td colspan="5" class="text-center py-5">
+                                <td colspan="6" class="text-center py-5">
                                     <i class="bi bi-calendar-x display-4 text-muted"></i>
                                     <p class="mt-3 text-muted">You have no appointments yet. Start exploring salons!</p>
-                                    <a href="{% url 'salon_list' %}" class="btn btn-primary rounded-pill">Find a Salon</a>
+                                    <a href="{% url 'salon_list' %}" class="btn btn-primary rounded-pill">Find a
+                                        Salon</a>
                                 </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Pagination Controls -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link shadow-sm border-0" href="?page={{ page_obj.previous_page_number }}"
+                                aria-label="Previous" style="border-radius: 10px 0 0 10px;">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link border-0" style="border-radius: 10px 0 0 10px;"><i
+                                    class="bi bi-chevron-left"></i></span>
+                        </li>
+                        {% endif %}
+
+                        {% for i in elided_page_range %}
+                        {% if i == page_obj.number %}
+                        <li class="page-item active"><span class="page-link border-0">{{ i }}</span></li>
+                        {% elif i == page_obj.paginator.ELLIPSIS %}
+                        <li class="page-item disabled"><span class="page-link border-0">{{ i }}</span></li>
+                        {% else %}
+                        <li class="page-item"><a class="page-link border-0" href="?page={{ i }}">{{ i }}</a></li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link shadow-sm border-0" href="?page={{ page_obj.next_page_number }}"
+                                aria-label="Next" style="border-radius: 0 10px 10px 0;">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link border-0" style="border-radius: 0 10px 10px 0;"><i
+                                    class="bi bi-chevron-right"></i></span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
+
+<!-- Cancel Confirmation Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 15px;">
+            <div class="modal-header border-bottom-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold text-danger" id="cancelModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Cancel Appointment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 pb-4">
+                <p class="text-secondary">Are you sure you want to cancel your appointment for <strong id="modalServiceName" class="text-dark"></strong> on <strong id="modalBookingDate" class="text-dark"></strong>?</p>
+                <p class="text-muted small mb-0">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-top-0 px-4 pb-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Keep Booking</button>
+                <a id="confirmCancelLink" href="#" class="btn btn-danger rounded-pill px-4">Yes, Cancel It</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const cancelModal = document.getElementById('cancelModal');
+    if (cancelModal) {
+        cancelModal.addEventListener('show.bs.modal', function(event) {
+            // Button that triggered the modal
+            const button = event.relatedTarget;
+            // Extract info from data-* attributes
+            const bookingId = button.getAttribute('data-booking-id');
+            const serviceName = button.getAttribute('data-service-name');
+            const bookingDate = button.getAttribute('data-booking-date');
+            
+            // Update the modal's content
+            const modalServiceName = cancelModal.querySelector('#modalServiceName');
+            const modalBookingDate = cancelModal.querySelector('#modalBookingDate');
+            const confirmCancelLink = cancelModal.querySelector('#confirmCancelLink');
+            
+            modalServiceName.textContent = serviceName;
+            modalBookingDate.textContent = bookingDate;
+            confirmCancelLink.href = `/services/booking/${bookingId}/cancel/`;
+        });
+    }
+});
+</script>
+
 <style>
-    
-    .bg-success-soft { background-color: #e8f5e9; }
-    .bg-warning-soft { background-color: #fff8e1; }
-    .bg-danger-soft { background-color: #ffebee; }
-    .table-hover tbody tr:hover { background-color: #f8f9ff; }
+    .bg-success-soft {
+        background-color: #e8f5e9;
+    }
+
+    .bg-warning-soft {
+        background-color: #fff8e1;
+    }
+
+    .bg-danger-soft {
+        background-color: #ffebee;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f8f9ff;
+    }
 </style>
 {% endblock %}

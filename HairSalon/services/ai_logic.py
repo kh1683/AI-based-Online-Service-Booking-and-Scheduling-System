@@ -50,3 +50,34 @@ def get_ai_forecast(salon_id):
     values = [round(v, 2) for v in predictions['yhat']]
     
     return labels, values
+
+def get_optimal_time_slots(salon_id, selected_date_str=None):
+    """根据 AI 预测，推荐当天最空闲（效率最高）的 3 个营业时段"""
+    # 1. 跑一遍 Prophet 拿到预测数据
+    forecast_data = get_ai_forecast(salon_id)
+    
+    if not forecast_data:
+        # 如果历史数据不足，给出默认的营业时间推荐（比如早上的黄金时段）
+        return ['10:00', '11:00', '15:00']
+    
+    labels, values = forecast_data
+    
+    # 2. 将时间和预测值组合成字典或 DataFrame
+    slots = [{"time": label, "load": val} for label, val in zip(labels, values)]
+    
+    # 3. 按负载（Load）从低到高排序 —— 负载越低，对商家效率越好，客户等待时间越短
+    slots_sorted = sorted(slots, key=lambda x: x['load'])
+    
+    # 4. 选出负载最低的 3 个时段作为“智能推荐”
+    optimal_slots = [slot['time'] for slot in slots_sorted[:3]]
+    
+    # 如果预测到的时段不足 3 个，用默认时段补齐
+    default_backups = ['10:00', '11:00', '15:00']
+    for backup in default_backups:
+        if len(optimal_slots) >= 3:
+            break
+        if backup not in optimal_slots:
+            optimal_slots.append(backup)
+            
+    return optimal_slots[:3]
+

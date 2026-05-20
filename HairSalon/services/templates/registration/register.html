@@ -1,10 +1,10 @@
 {% extends 'services/base.html' %}
 
-{% block title %}创建账号 | {{ salon.name }}{% endblock %}
+{% block title %}Create Account | AI-Booking{% endblock %}
 
 {% block header_content %}
-    <h1 class="display-5 fw-bold"><i class="bi bi-person-plus-fill"></i> 加入我们</h1>
-    <p class="lead">创建一个账号以开始预约或管理您的生意</p>
+    <h1 class="display-5 fw-bold"><i class="bi bi-person-plus-fill"></i> Join Us</h1>
+    <p class="lead">Create an account to start booking or manage your business</p>
 {% endblock %}
 
 {% block content %}
@@ -13,11 +13,11 @@
         <div class="card shadow border-0" style="border-radius: 20px;">
             <div class="card-body p-5">
                 <div class="text-center mb-4">
-                    <h2 class="fw-bold text-theme-primary">创建新用户</h2>
-                    <p class="text-muted">加入 AI 驱动的Service预约平台</p>
+                    <h2 class="fw-bold text-theme-primary">Create New Account</h2>
+                    <p class="text-muted">Join the AI-powered service booking platform</p>
                 </div>
 
-                <form method="post">
+                <form method="post" id="register-form">
                     {% csrf_token %}
                     
                     {% for field in form %}
@@ -32,10 +32,43 @@
                                 {% else %}<i class="bi bi-lock"></i>{% endif %}
                             </span>
                             {{ field }}
+                            {% if 'password' in field.name %}
+                            <span class="input-group-text bg-white border-start-0 text-muted toggle-password-btn" data-target="{{ field.id_for_label }}" style="cursor: pointer;">
+                                <i class="bi bi-eye-slash" id="eye-{{ field.id_for_label }}"></i>
+                            </span>
+                            {% endif %}
                         </div>
                         
-                        {% if field.help_text %}
-                            <div class="form-text text-muted" style="font-size: 0.75rem;">{{ field.help_text|safe }}</div>
+                        {% if field.name == 'password1' %}
+                        <!-- Live Password Validation Checklist -->
+                        <div class="mt-2 ps-1" id="password-criteria">
+                            <div class="pwd-rule small" id="rule-length">
+                                <i class="bi bi-x-circle-fill text-muted me-1" id="icon-length"></i>
+                                <span>At least 8 characters</span>
+                            </div>
+                            <div class="pwd-rule small" id="rule-not-common">
+                                <i class="bi bi-x-circle-fill text-muted me-1" id="icon-not-common"></i>
+                                <span>Not a commonly used password</span>
+                            </div>
+                            <div class="pwd-rule small" id="rule-not-numeric">
+                                <i class="bi bi-x-circle-fill text-muted me-1" id="icon-not-numeric"></i>
+                                <span>Not entirely numeric</span>
+                            </div>
+                            <div class="pwd-rule small" id="rule-not-similar">
+                                <i class="bi bi-x-circle-fill text-muted me-1" id="icon-not-similar"></i>
+                                <span>Not too similar to your username</span>
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if field.name == 'password2' %}
+                        <!-- Password Match Indicator -->
+                        <div class="mt-2 ps-1" id="password-match-area" style="display:none;">
+                            <div class="pwd-rule small" id="rule-match">
+                                <i class="bi bi-x-circle-fill text-muted me-1" id="icon-match"></i>
+                                <span id="match-text">Passwords do not match</span>
+                            </div>
+                        </div>
                         {% endif %}
                         
                         {% for error in field.errors %}
@@ -46,23 +79,13 @@
 
                     <div class="d-grid gap-2 mt-4">
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm" style="border-radius: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
-                            立即Register
+                            Register
                         </button>
                     </div>
                 </form>
 
                 <div class="mt-4 text-center">
-                    <div class="d-flex align-items-center mb-4">
-                        <hr class="flex-grow-1">
-                        <span class="mx-3 text-muted small">或者通过以下方式</span>
-                        <hr class="flex-grow-1">
-                    </div>
-                    <button class="btn btn-outline-dark w-100 mb-3" style="border-radius: 12px;">
-                        <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg" width="18" class="me-2">
-                        使用 Google 账号Login
-                    </button>
-                    
-                    <p class="mb-0 text-muted">已经有账号了？ <a href="{% url 'login' %}" class="text-theme-primary fw-bold text-decoration-none">立即Login</a></p>
+                    <p class="mb-0 text-muted">Already have an account? <a href="{% url 'login' %}" class="text-theme-primary fw-bold text-decoration-none">Sign In</a></p>
                 </div>
             </div>
         </div>
@@ -70,25 +93,25 @@
 </div>
 
 <style>
-    
+    /* Input group styling */
     .input-group {
         display: flex !important;
         align-items: stretch;
     }
 
-    
     .input-group-text {
         background-color: #f8f9fa;
         border: 1px solid #dee2e6;
         border-right: none; 
         border-top-left-radius: 12px !important;
         border-bottom-left-radius: 12px !important;
+        border-top-right-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
         color: #6c757d;
         width: 45px;
         justify-content: center;
     }
 
-    
     .input-group input {
         flex: 1 1 auto;
         width: 1% !important; 
@@ -101,17 +124,177 @@
         height: auto !important;
     }
 
-    
+    /* When eye icon is present, middle input shouldn't have right radius */
+    .input-group input:not(:last-child) {
+        border-top-right-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        border-right: none !important;
+    }
+
+    /* Eye toggle button styling */
+    .toggle-password-btn {
+        border: 1px solid #dee2e6;
+        border-left: none;
+        border-top-right-radius: 12px !important;
+        border-bottom-right-radius: 12px !important;
+        border-top-left-radius: 0 !important;
+        border-bottom-left-radius: 0 !important;
+        transition: color 0.2s;
+    }
+    .toggle-password-btn:hover {
+        color: #667eea !important;
+    }
+
     .input-group input:focus {
         outline: none;
         border-color: #667eea !important;
         box-shadow: none;
     }
-    
-    
+
     .form-label {
         margin-bottom: 0.3rem;
         display: block;
     }
+
+    /* Password validation rules */
+    .pwd-rule {
+        padding: 2px 0;
+        color: #6c757d;
+        transition: color 0.3s ease;
+    }
+    .pwd-rule.valid {
+        color: #198754;
+    }
+    .pwd-rule.valid i {
+        color: #198754 !important;
+    }
+    .pwd-rule.invalid {
+        color: #dc3545;
+    }
+    .pwd-rule.invalid i {
+        color: #dc3545 !important;
+    }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+    // ========== Toggle Password Visibility ==========
+    document.querySelectorAll('.toggle-password-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const icon = document.getElementById('eye-' + targetId);
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            }
+        });
+    });
+
+    // ========== Live Password Validation ==========
+    const commonPasswords = [
+        'password', '12345678', '123456789', '1234567890', 'qwerty',
+        'abc12345', 'password1', 'iloveyou', 'sunshine', 'princess',
+        'football', 'charlie', 'access', 'shadow', 'master',
+        'michael', 'monkey', 'dragon', 'letmein', 'mustang'
+    ];
+
+    const pw1 = document.getElementById('id_password1');
+    const pw2 = document.getElementById('id_password2');
+    const username = document.getElementById('id_username');
+
+    function setRuleState(ruleId, iconId, isValid) {
+        const rule = document.getElementById(ruleId);
+        const icon = document.getElementById(iconId);
+        if (isValid) {
+            rule.classList.add('valid');
+            rule.classList.remove('invalid');
+            icon.classList.remove('bi-x-circle-fill');
+            icon.classList.add('bi-check-circle-fill');
+        } else {
+            rule.classList.remove('valid');
+            rule.classList.add('invalid');
+            icon.classList.remove('bi-check-circle-fill');
+            icon.classList.add('bi-x-circle-fill');
+        }
+    }
+
+    function resetRule(ruleId, iconId) {
+        const rule = document.getElementById(ruleId);
+        const icon = document.getElementById(iconId);
+        rule.classList.remove('valid', 'invalid');
+        rule.style.color = '';
+        icon.classList.remove('bi-check-circle-fill');
+        icon.classList.add('bi-x-circle-fill');
+        icon.style.color = '';
+    }
+
+    function validatePassword() {
+        const val = pw1 ? pw1.value : '';
+        const user = username ? username.value.toLowerCase() : '';
+
+        if (val.length === 0) {
+            // Reset all rules to neutral state
+            resetRule('rule-length', 'icon-length');
+            resetRule('rule-not-common', 'icon-not-common');
+            resetRule('rule-not-numeric', 'icon-not-numeric');
+            resetRule('rule-not-similar', 'icon-not-similar');
+            return;
+        }
+
+        // Rule 1: At least 8 characters
+        setRuleState('rule-length', 'icon-length', val.length >= 8);
+
+        // Rule 2: Not a commonly used password
+        setRuleState('rule-not-common', 'icon-not-common', !commonPasswords.includes(val.toLowerCase()));
+
+        // Rule 3: Not entirely numeric
+        setRuleState('rule-not-numeric', 'icon-not-numeric', !/^\d+$/.test(val));
+
+        // Rule 4: Not too similar to username
+        let tooSimilar = false;
+        if (user.length > 0 && val.length > 0) {
+            tooSimilar = val.toLowerCase().includes(user) || user.includes(val.toLowerCase());
+        }
+        setRuleState('rule-not-similar', 'icon-not-similar', !tooSimilar);
+    }
+
+    function validateMatch() {
+        if (!pw2) return;
+        const matchArea = document.getElementById('password-match-area');
+        const val1 = pw1 ? pw1.value : '';
+        const val2 = pw2.value;
+
+        if (val2.length === 0) {
+            matchArea.style.display = 'none';
+            return;
+        }
+
+        matchArea.style.display = 'block';
+        const matched = val1 === val2 && val1.length > 0;
+        setRuleState('rule-match', 'icon-match', matched);
+        document.getElementById('match-text').textContent = matched ? 'Passwords match' : 'Passwords do not match';
+    }
+
+    if (pw1) {
+        pw1.addEventListener('input', function() {
+            validatePassword();
+            validateMatch();
+        });
+    }
+    if (pw2) {
+        pw2.addEventListener('input', validateMatch);
+    }
+    if (username) {
+        username.addEventListener('input', validatePassword);
+    }
+});
+</script>
 {% endblock %}

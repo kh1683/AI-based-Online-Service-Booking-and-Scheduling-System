@@ -36,7 +36,7 @@
     
     <div class="row g-4">
         {% for service in services %}
-        <div class="col-md-6 col-lg-4">
+        <div class="col-sm-6 col-md-4 col-lg-3">
             <div class="card h-100 shadow-sm border-0 position-relative" style="border-radius: 20px; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 1rem 3rem rgba(0,0,0,.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 .125rem .25rem rgba(0,0,0,.075)'">
                 <!-- A stylish top border accent -->
                 <div class="position-absolute top-0 start-0 w-100" style="height: 5px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
@@ -69,8 +69,12 @@
                             <span class="text-muted small d-block mb-1">Price Range</span>
                             <span class="text-theme-primary fw-bold fs-5">RM {{ service.min_price|floatformat:0 }} - {{ service.max_price|floatformat:0 }}</span>
                         </div>
-                        <a href="{% url 'create_booking' salon.id %}?service={{ service.id }}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
-                            Book
+                        <a href="{% url 'create_booking' salon.id %}?service={{ service.id }}" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold{% if user.userprofile.role == 'merchant' %} disabled{% endif %}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;"{% if user.userprofile.role == 'merchant' %} onclick="return false;" title="Merchants cannot make bookings"{% endif %}>
+                            {% if user.userprofile.role == 'merchant' %}
+                                <i class="bi bi-lock me-1"></i> Book
+                            {% else %}
+                                Book
+                            {% endif %}
                         </a>
                     </div>
                 </div>
@@ -84,5 +88,205 @@
         </div>
         {% endfor %}
     </div>
+
+    <!-- Meet Our Stylists Section -->
+    <div class="row align-items-center mt-5 mb-4">
+        <div class="col-md-8">
+            <h3 class="fw-bold text-theme-primary mb-0"><i class="bi bi-people me-2 text-primary"></i>Meet Our Stylists</h3>
+            <p class="text-muted mt-1 mb-0">Our professional stylists are here to serve you</p>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        {% for staff in staff_members %}
+        <div class="col-sm-6 col-md-4 col-lg-3">
+            <div class="card h-100 shadow-sm border-0 position-relative" style="border-radius: 20px; overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 1rem 3rem rgba(0,0,0,.15)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 .125rem .25rem rgba(0,0,0,.075)'">
+                <div class="position-absolute top-0 start-0 w-100" style="height: 5px; background: linear-gradient(135deg, #2b5876 0%, #4e4376 100%);"></div>
+                
+                <div class="card-body p-4 d-flex flex-column text-center">
+                    <div class="mb-3">
+                        {% if staff.has_valid_image %}
+                        <img src="{{ staff.image.url }}" class="rounded-circle border border-2 border-light shadow-sm" style="width: 90px; height: 90px; object-fit: cover;" alt="{{ staff.name }}">
+                        {% else %}
+                        <div class="rounded-circle bg-light border border-2 border-light shadow-sm d-inline-flex align-items-center justify-content-center text-secondary" style="width: 90px; height: 90px;">
+                            <i class="bi bi-person-fill fs-1"></i>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <h5 class="fw-bold mb-1 text-dark">{{ staff.name }}</h5>
+                    <span class="badge bg-light text-secondary mb-3 align-self-center px-3 py-1.5" style="border-radius: 30px;">{{ staff.role|default:"Stylist" }}</span>
+                    
+                    {% if staff.specialty %}
+                    <p class="text-secondary small mb-3"><i class="bi bi-gem text-primary me-1"></i>{{ staff.specialty }}</p>
+                    {% endif %}
+
+                    <!-- Rating / Comment card info -->
+                    <div class="mt-auto pt-3 border-top bg-light-subtle rounded p-2 mb-3">
+                        <div class="d-flex justify-content-center align-items-center text-warning small mb-1">
+                            {% if staff.avg_rating %}
+                                <i class="bi bi-star-fill me-1"></i> <span class="fw-bold text-dark me-1">{{ staff.avg_rating }}</span>
+                                <span class="text-muted">({{ staff.reviews_count }})</span>
+                            {% else %}
+                                <span class="text-muted small">No ratings</span>
+                            {% endif %}
+                        </div>
+                        
+                        {% if staff.latest_review %}
+                            <p class="text-muted mb-0 small text-truncate" style="font-style: italic;" title="{{ staff.latest_review.comment|default:'Rated with star only' }}">
+                                "{{ staff.latest_review.comment|default:'Rated only' }}"
+                            </p>
+                        {% else %}
+                            <p class="text-muted mb-0 small text-truncate" style="font-style: italic;">
+                                "Be the first to review!"
+                            </p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'staff_detail' staff.id %}" class="btn btn-outline-secondary btn-sm rounded-pill">
+                            View Profile & Schedule
+                        </a>
+                        <a href="{% url 'create_booking' salon.id %}?staff={{ staff.id }}" class="btn btn-primary btn-sm rounded-pill{% if user.userprofile.role == 'merchant' %} disabled{% endif %}" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                            Book Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12 text-center py-4">
+            <p class="text-muted">No active stylists registered for this salon yet.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Salon Reviews Section -->
+    <div class="row mt-5 mb-4">
+        <div class="col-12">
+            <hr class="my-5" style="opacity: 0.1;">
+        </div>
+        <div class="col-md-6 mb-4 mb-md-0">
+            <h3 class="fw-bold text-theme-primary mb-2"><i class="bi bi-chat-heart-fill me-2 text-danger"></i>Salon Reviews & Feedback</h3>
+            <p class="text-muted mb-4">What our customers think about our salon. Overall rating: 
+                {% if salon.avg_rating %}
+                    <span class="fw-bold text-dark">{{ salon.avg_rating }} / 5</span> <i class="bi bi-star-fill text-warning"></i>
+                {% else %}
+                    <span class="text-muted">No ratings yet</span>
+                {% endif %}
+            </p>
+
+            <div class="review-list" style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                {% for review in salon_reviews %}
+                <div class="card border-0 shadow-sm mb-3" style="border-radius: 15px;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                           <div class="d-flex align-items-center">
+                               {% if review.customer.userprofile.avatar %}
+                               <img src="{{ review.customer.userprofile.avatar.url }}" class="rounded-circle me-2.5" style="width: 35px; height: 35px; object-fit: cover;" alt="{{ review.customer.username }}">
+                               {% else %}
+                               <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center text-secondary me-2.5" style="width: 35px; height: 35px;">
+                                   <i class="bi bi-person-fill"></i>
+                               </div>
+                               {% endif %}
+                               <div>
+                                   <h6 class="fw-bold mb-0 text-dark" style="font-size: 0.9rem;">{{ review.customer.username }}</h6>
+                                   <small class="text-muted" style="font-size: 0.75rem;">{{ review.created_at|date:"M d, Y" }}</small>
+                               </div>
+                           </div>
+                           <div class="text-warning small">
+                               {% for i in "12345" %}
+                                   {% if forloop.counter <= review.rating %}
+                                       <i class="bi bi-star-fill"></i>
+                                   {% else %}
+                                       <i class="bi bi-star"></i>
+                                   {% endif %}
+                               {% endfor %}
+                           </div>
+                        </div>
+                        <div class="text-secondary mb-0 small ps-4" style="font-style: italic;">
+                            {% if review.comment %}
+                                "{{ review.comment }}"
+                            {% else %}
+                                <span class="text-muted small">Rated with stars only.</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-5 border rounded bg-white text-muted">
+                    <i class="bi bi-emoji-smile fs-2 text-muted mb-2 d-block"></i>
+                    <p class="mb-0">No salon reviews yet. Be the first to share your thoughts!</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Leave/Update Feedback Form -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold text-theme-primary mb-3">
+                        {% if user_salon_review %}
+                            <i class="bi bi-pencil-square me-2 text-primary"></i>Update Salon Feedback
+                        {% else %}
+                            <i class="bi bi-chat-dots-fill me-2 text-primary"></i>Review This Salon
+                        {% endif %}
+                    </h4>
+                    
+                    {% if request.user.is_authenticated %}
+                    <form action="{% url 'submit_salon_review' salon.id %}" method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold text-secondary">Your Rating (Required)</label>
+                            <div class="salon-star-rating-selector d-flex gap-2 mb-2 fs-3 text-warning">
+                                {% for i in "12345" %}
+                                <i class="bi bi-star cursor-pointer" data-value="{{ forloop.counter }}" onclick="setSalonRating({{ forloop.counter }})" style="cursor: pointer;"></i>
+                                {% endfor %}
+                            </div>
+                            <input type="hidden" name="rating" id="id_salon_rating_input" value="{% if user_salon_review %}{{ user_salon_review.rating }}{% endif %}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="id_salon_comment" class="form-label fw-semibold text-secondary">Your Comment (Optional)</label>
+                            <textarea class="form-control" name="comment" id="id_salon_comment" rows="4" placeholder="How was your visit to {{ salon.name }}? Add your thoughts..." style="border-radius: 12px;">{% if user_salon_review %}{{ user_salon_review.comment|default:"" }}{% endif %}</textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100" style="border-radius: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 10px;">
+                            <i class="bi bi-send me-1"></i>Submit Salon Review
+                        </button>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-light border text-center p-4 mb-0 d-flex flex-column align-items-center justify-content-center h-100" style="border-radius: 12px; min-height: 250px;">
+                        <i class="bi bi-lock-fill fs-2 text-muted mb-2"></i>
+                        <p class="mb-3 text-secondary">Please log in to review {{ salon.name }}.</p>
+                        <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-outline-primary px-4 py-2" style="border-radius: 20px;">Log In Now</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ratingInputVal = document.getElementById('id_salon_rating_input');
+        if (ratingInputVal && ratingInputVal.value) {
+            setSalonRating(parseInt(ratingInputVal.value));
+        }
+    });
+
+    function setSalonRating(val) {
+        document.getElementById('id_salon_rating_input').value = val;
+        const stars = document.querySelectorAll('.salon-star-rating-selector i');
+        stars.forEach((star, idx) => {
+            if (idx < val) {
+                star.classList.remove('bi-star');
+                star.classList.add('bi-star-fill');
+            } else {
+                star.classList.remove('bi-star-fill');
+                star.classList.add('bi-star');
+            }
+        });
+    }
+</script>
 {% endblock %}

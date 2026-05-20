@@ -5,6 +5,8 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from datetime import datetime, timedelta
+
 
 class Salon(models.Model):
     # Core: Bind salon to its owner
@@ -87,10 +89,19 @@ class Booking(models.Model):
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='bookings')
     
     booking_date = models.DateField() # Booking Date
-    timeslot = models.TimeField()     # Timeslot
+    timeslot = models.TimeField()     # Start Time
+    end_time = models.TimeField(blank=True, null=True) # Calculated End Time
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.end_time and self.timeslot and self.service:
+            # Calculate end_time based on service duration
+            start_datetime = datetime.combine(datetime.today(), self.timeslot)
+            end_datetime = start_datetime + timedelta(minutes=self.service.duration_minutes)
+            self.end_time = end_datetime.time()
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.customer.username} - {self.service.name} - {self.booking_date}"
@@ -117,3 +128,23 @@ class UserProfile(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
+
+class StaffReview(models.Model):
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='reviews')
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='staff_reviews')
+    rating = models.IntegerField(default=5, verbose_name="Rating (1-5)")
+    comment = models.TextField(blank=True, null=True, verbose_name="Comment")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.customer.username} - {self.staff.name} - {self.rating} Stars"
+
+class SalonReview(models.Model):
+    salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='reviews')
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='salon_reviews')
+    rating = models.IntegerField(default=5, verbose_name="Rating (1-5)")
+    comment = models.TextField(blank=True, null=True, verbose_name="Comment")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.customer.username} - {self.salon.name} - {self.rating} Stars"

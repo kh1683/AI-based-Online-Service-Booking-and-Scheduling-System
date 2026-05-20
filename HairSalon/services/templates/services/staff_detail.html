@@ -1,0 +1,246 @@
+{% extends 'services/base.html' %}
+{% load static %}
+
+{% block title %}{{ staff.name }} - Stylist Profile{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'salon_list' %}" class="text-decoration-none text-muted">Salons</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'salon_detail' staff.salon.id %}" class="text-decoration-none text-muted">{{ staff.salon.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ staff.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Stylist Info Banner -->
+<div class="card shadow-sm border-0 mb-4 overflow-hidden" style="border-radius: 20px;">
+    <div class="position-absolute top-0 start-0 w-100" style="height: 6px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+    <div class="card-body p-4 p-md-5">
+        <div class="row align-items-center">
+            <div class="col-md-3 text-center mb-4 mb-md-0">
+                {% if staff.has_valid_image %}
+                <img src="{{ staff.image.url }}" class="rounded-circle border border-4 border-white shadow-sm" style="width: 150px; height: 150px; object-fit: cover;" alt="{{ staff.name }}">
+                {% else %}
+                <div class="rounded-circle bg-light border border-4 border-white shadow-sm d-inline-flex align-items-center justify-content-center text-secondary" style="width: 150px; height: 150px;">
+                    <i class="bi bi-person-fill" style="font-size: 5rem;"></i>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-md-9 text-center text-md-start">
+                <span class="badge bg-primary-subtle text-primary mb-2 px-3 py-2 fs-7" style="border-radius: 30px;">{{ staff.role|default:"Stylist" }}</span>
+                <h2 class="fw-bold text-theme-primary mb-2">{{ staff.name }}</h2>
+                <p class="text-muted fs-6 mb-3">
+                    <i class="bi bi-shop me-2 text-primary"></i>Works at <a href="{% url 'salon_detail' staff.salon.id %}" class="text-decoration-none fw-bold text-secondary">{{ staff.salon.name }}</a>
+                </p>
+                
+                {% if staff.specialty %}
+                <p class="mb-3 text-secondary">
+                    <span class="fw-bold text-dark"><i class="bi bi-gem me-1"></i>Specialty:</span> {{ staff.specialty }}
+                </p>
+                {% endif %}
+
+                <!-- Rating Display -->
+                <div class="d-flex align-items-center justify-content-center justify-content-md-start mb-3">
+                    <div class="text-warning me-2 fs-5">
+                        {% if avg_rating == "No ratings yet" %}
+                            {% for i in empty_stars %}<i class="bi bi-star"></i>{% endfor %}
+                        {% else %}
+                            {% for i in full_stars %}<i class="bi bi-star-fill"></i>{% endfor %}
+                            {% if half_star %}<i class="bi bi-star-half"></i>{% endif %}
+                            {% for i in empty_stars %}<i class="bi bi-star"></i>{% endfor %}
+                        {% endif %}
+                    </div>
+                    <span class="fw-bold text-dark fs-6">{{ avg_rating }}</span>
+                    {% if staff.reviews_count %}
+                    <span class="text-muted ms-2">({{ staff.reviews_count }} review{{ staff.reviews_count|pluralize }})</span>
+                    {% endif %}
+                </div>
+
+                <a href="{% url 'create_booking' staff.salon.id %}?staff={{ staff.id }}&cancel_to=staff" class="btn btn-primary px-4 py-2" style="border-radius: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; transition: 0.3s;">
+                    <i class="bi bi-calendar-check me-2"></i>Book with {{ staff.name }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: 7-Day Schedule -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+            <div class="card-header bg-white border-0 pt-4 px-4">
+                <h4 class="fw-bold text-theme-primary mb-1"><i class="bi bi-clock-history me-2 text-primary"></i>Weekly Schedule</h4>
+                <p class="text-muted small mb-0">Stylist's current availability and busy time slots for the next 7 days.</p>
+            </div>
+            <div class="card-body px-4 pb-4">
+                <div class="schedule-timeline">
+                    {% for day in schedule_days %}
+                    <div class="p-3 mb-3 border-start border-3 {% if day.has_bookings %}border-warning bg-warning-subtle bg-opacity-10{% else %}border-success bg-success-subtle bg-opacity-10{% endif %}" style="border-radius: 0 12px 12px 0;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-dark">{{ day.date|date:"D, M d" }}</span>
+                            {% if day.has_bookings %}
+                            <span class="badge bg-warning text-dark px-2.5 py-1.5" style="border-radius: 20px;">Some Bookings</span>
+                            {% else %}
+                            <span class="badge bg-success text-white px-2.5 py-1.5" style="border-radius: 20px;">Fully Available</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-flex flex-wrap gap-2 mt-2">
+                            {% for slot in day.slots %}
+                                {% if slot.is_booked %}
+                                    <span class="badge bg-light text-muted border px-2.5 py-1.5" style="border-radius: 20px; text-decoration: line-through; opacity: 0.6;" title="Booked">
+                                        <i class="bi bi-clock-fill text-danger me-1"></i>{{ slot.time|time:"h:i A" }}
+                                    </span>
+                                {% else %}
+                                    <a href="{% url 'create_booking' staff.salon.id %}?staff={{ staff.id }}&date={{ day.date|date:'Y-m-d' }}&time={{ slot.time|time:'H:i' }}&cancel_to=staff" 
+                                       class="badge bg-success-soft text-success border border-success border-opacity-25 px-2.5 py-1.5 text-decoration-none slot-available-btn" 
+                                       style="border-radius: 20px; transition: all 0.2s;"
+                                       title="Book this slot">
+                                        <i class="bi bi-calendar-plus me-1"></i>{{ slot.time|time:"h:i A" }}
+                                    </a>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Feedback & Review Submissions -->
+    <div class="col-lg-7">
+        <!-- Review Submission Card -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
+            <div class="card-body p-4">
+                <h4 class="fw-bold text-theme-primary mb-3">
+                    {% if user_review %}
+                    <i class="bi bi-pencil-square me-2 text-primary"></i>Update Your Feedback
+                    {% else %}
+                    <i class="bi bi-chat-heart me-2 text-primary"></i>Leave Feedback
+                    {% endif %}
+                </h4>
+                
+                {% if request.user.is_authenticated %}
+                <form action="{% url 'staff_detail' staff.id %}" method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Your Rating (Required)</label>
+                        <div class="star-rating-selector d-flex gap-2 mb-2 fs-3 text-warning">
+                            {% for i in "12345" %}
+                            <i class="bi bi-star cursor-pointer" data-value="{{ forloop.counter }}" onclick="setRating({{ forloop.counter }})" style="cursor: pointer;"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="rating" id="id_rating_input" value="{% if user_review %}{{ user_review.rating }}{% endif %}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_comment" class="form-label fw-semibold text-secondary">Your Feedback Comment (Optional)</label>
+                        <textarea class="form-control" name="comment" id="id_comment" rows="3" placeholder="Tell us about your experience with {{ staff.name }}..." style="border-radius: 12px;">{% if user_review %}{{ user_review.comment|default:"" }}{% endif %}</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" style="border-radius: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 10px;">
+                        <i class="bi bi-send me-1"></i>Submit Feedback
+                    </button>
+                </form>
+                {% else %}
+                <div class="alert alert-light border text-center p-4 mb-0" style="border-radius: 12px;">
+                    <i class="bi bi-lock-fill fs-2 text-muted mb-2 d-block"></i>
+                    <p class="mb-3 text-secondary">Please log in to submit a rating and comment for {{ staff.name }}.</p>
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-outline-primary px-4 py-2" style="border-radius: 20px;">Log In Now</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Customer Comments and Ratings List -->
+        <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+            <div class="card-header bg-white border-0 pt-4 px-4">
+                <h4 class="fw-bold text-theme-primary mb-1"><i class="bi bi-chat-right-text me-2 text-primary"></i>Customer Reviews</h4>
+                <p class="text-muted small mb-0">What other customers say about {{ staff.name }}</p>
+            </div>
+            <div class="card-body p-4">
+                {% if reviews %}
+                    <div class="review-list">
+                        {% for review in reviews %}
+                        <div class="review-item pb-3 mb-3 border-bottom {% if forloop.last %}border-bottom-0 pb-0 mb-0{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-center">
+                                    {% if review.customer.userprofile.avatar %}
+                                    <img src="{{ review.customer.userprofile.avatar.url }}" class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover;" alt="{{ review.customer.username }}">
+                                    {% else %}
+                                    <div class="rounded-circle bg-secondary bg-opacity-10 d-flex align-items-center justify-content-center text-secondary me-3" style="width: 45px; height: 45px;">
+                                        <i class="bi bi-person-fill fs-5"></i>
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <h6 class="fw-bold mb-0 text-dark">{{ review.customer.username }}</h6>
+                                        <small class="text-muted">{{ review.created_at|date:"F d, Y" }}</small>
+                                    </div>
+                                </div>
+                                <div class="text-warning">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= review.rating %}
+                                            <i class="bi bi-star-fill small"></i>
+                                        {% else %}
+                                            <i class="bi bi-star small"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            
+                            <div class="review-comment text-secondary ps-5">
+                                {% if review.comment %}
+                                    <p class="mb-0 italic" style="font-style: italic;">"{{ review.comment }}"</p>
+                                {% else %}
+                                    <p class="mb-0 text-muted small">No comment left, only rating.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-chat-heart fs-1 text-muted mb-3 d-block"></i>
+                        <p class="mb-0">No feedback reviews yet. Be the first to share your experience!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ratingInputVal = document.getElementById('id_rating_input').value;
+        if (ratingInputVal) {
+            setRating(parseInt(ratingInputVal));
+        }
+    });
+
+    function setRating(val) {
+        document.getElementById('id_rating_input').value = val;
+        const stars = document.querySelectorAll('.star-rating-selector i');
+        stars.forEach((star, idx) => {
+            if (idx < val) {
+                star.classList.remove('bi-star');
+                star.classList.add('bi-star-fill');
+            } else {
+                star.classList.remove('bi-star-fill');
+                star.classList.add('bi-star');
+            }
+        });
+    }
+</script>
+
+<style>
+    .slot-available-btn:hover {
+        background-color: #198754 !important;
+        color: white !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(25, 135, 84, 0.15);
+    }
+</style>
+{% endblock %}

@@ -32,15 +32,73 @@
                     </div>
                     {% endfor %}
 
+                    <!-- AI Optimal Booking Times Card -->
+                    <div class="card shadow-sm border-0 p-4 mb-4" style="border-radius: 15px; background: linear-gradient(145deg, #ffffff, #f3f0ff);">
+                        <h6 class="fw-bold text-purple mb-3">
+                            <i class="bi bi-stars"></i> AI Optimal Booking Times
+                        </h6>
+                        <p class="text-muted small">Based on system historical analysis and provider efficiency, we recommend these slots to avoid long waiting times:</p>
+                        
+                        <div id="ai-slots-container" class="d-flex gap-2 flex-wrap">
+                            <span class="text-muted small">Please select a date first to calculate optimal times...</span>
+                        </div>
+                    </div>
+
                     <div class="d-grid gap-2 mt-5">
                         <button type="submit" class="btn btn-primary btn-lg shadow-sm" style="border-radius: 12px;">
                             Confirm Reservation
                         </button>
-                        <a href="{% url 'salon_list' %}" class="btn btn-link text-muted mt-2 text-decoration-none">Cancel</a>
+                        <a href="{{ cancel_url }}" class="btn btn-link text-muted mt-2 text-decoration-none">Cancel</a>
                     </div>
                 </form>
             </div>
         </div>
+
+        <script>
+        document.getElementById('booking_date_input').addEventListener('change', function() {
+            const selectedDate = this.value;
+            const salonId = "{{ salon.id }}"; // 当前店面 ID
+            const container = document.getElementById('ai-slots-container');
+            
+            container.innerHTML = '<span class="spinner-border spinner-border-sm text-primary"></span> Calculating optimal times...';
+
+            fetch(`/services/api/ai-recommendations/?salon_id=${salonId}&date=${selectedDate}`)
+                .then(response => response.json())
+                .then(data => {
+                    container.innerHTML = ''; // 清空
+                    if (data.status === 'success' && data.recommended_slots.length > 0) {
+                        data.recommended_slots.forEach(slot => {
+                            // 渲染漂亮的推荐按钮/标签
+                            container.innerHTML += `
+                                <button type="button" class="btn btn-sm btn-outline-purple rounded-pill shadow-sm ai-slot-btn" onclick="selectTime('${slot}')">
+                                    🔥 ${slot} (Optimal)
+                                </button>
+                            `;
+                        });
+                    } else {
+                        container.innerHTML = '<span class="text-muted small">No specific data. Standard slots available.</span>';
+                    }
+                });
+        });
+
+        function selectTime(time) {
+            // 自动帮用户填入原生时间输入框
+            document.getElementById('booking_time_input').value = time;
+        }
+        </script>
+
+        <style>
+            .text-purple { color: #6f42c1; }
+            .btn-outline-purple {
+                color: #6f42c1;
+                border-color: #6f42c1;
+            }
+            .btn-outline-purple:hover {
+                background-color: #6f42c1;
+                color: #fff;
+            }
+        </style>
+
         
         <div class="mt-4 text-center">
             <p class="small text-muted">

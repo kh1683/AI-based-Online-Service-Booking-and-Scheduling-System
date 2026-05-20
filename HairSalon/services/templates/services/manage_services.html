@@ -2,7 +2,9 @@
 
 {% block header_content %}
 <div class="container position-relative">
-    <a href="{% url 'dashboard' %}" class="btn btn-light position-absolute top-0 start-0 mt-3 rounded-circle shadow-sm" style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; z-index: 10;" title="Back to Dashboard">
+    <a href="{% url 'dashboard' %}" class="btn btn-light position-absolute top-0 start-0 mt-3 rounded-circle shadow-sm"
+        style="width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; z-index: 10;"
+        title="Back to Dashboard">
         <i class="bi bi-arrow-left fs-5 text-primary"></i>
     </a>
     <div class="text-center py-4">
@@ -25,7 +27,7 @@
                             <label class="form-label small fw-bold">Service Name</label>
                             {{ form.name }}
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-6 mb-3">
                                 <label class="form-label small fw-bold">Min Price (RM)</label>
@@ -65,7 +67,7 @@
                                     <th class="ps-4">Service Details</th>
                                     <th>Price Range</th>
                                     <th>Status</th>
-                                    <th class="text-end pe-4">Action</th>
+                                    <th class="text-center">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -74,7 +76,7 @@
                                     <td class="ps-4">
                                         <div class="fw-bold text-dark">{{ service.name }}</div>
                                         <small class="text-muted">
-                                            <i class="bi bi-clock me-1"></i>约 {{ service.duration_minutes }} 分钟
+                                            <i class="bi bi-clock me-1"></i>Approx. {{ service.duration_minutes }} mins
                                         </small>
                                     </td>
                                     <td>
@@ -82,20 +84,37 @@
                                             RM {{ service.min_price }} - {{ service.max_price }}
                                         </span>
                                     </td>
+
                                     <td>
                                         {% if service.is_active %}
-                                            <span class="badge bg-success-soft text-success px-3">Active</span>
+                                        <span class="badge bg-success-soft text-success px-3">Active</span>
                                         {% else %}
-                                            <span class="badge bg-secondary-soft text-muted px-3">Inactive</span>
+                                        <span class="badge bg-secondary-soft text-muted px-3">Inactive</span>
                                         {% endif %}
                                     </td>
-                                    <td class="text-end pe-4">
-                                        <form action="{% url 'toggle_service_status' service.id %}" method="post" class="d-inline">
-                                            {% csrf_token %}
-                                            <button type="submit" class="btn {% if service.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %} btn-sm rounded-pill px-3">
-                                                {% if service.is_active %}Deactivate{% else %}Activate{% endif %}
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center align-items-center gap-2 flex-nowrap">
+                                            <!-- Edit Button -->
+                                            <button type="button"
+                                                class="btn btn-sm btn-outline-primary rounded-pill px-3 edit-service-btn"
+                                                data-bs-toggle="modal" data-bs-target="#editServiceModal"
+                                                data-id="{{ service.id }}" data-name="{{ service.name }}"
+                                                data-min="{{ service.min_price|stringformat:".2f" }}" 
+                                                data-max="{{ service.max_price|stringformat:".2f" }}"
+                                                data-note="{{ service.price_note }}"
+                                                data-duration_minutes="{{ service.duration_minutes }}">
+                                                <i class="bi bi-pencil-square me-1"></i>Edit
                                             </button>
-                                        </form>
+
+                                            <!-- Toggle Status Form -->
+                                            <form action="{% url 'toggle_service_status' service.id %}" method="post" class="m-0">
+                                                {% csrf_token %}
+                                                <button type="submit"
+                                                    class="btn {% if service.is_active %}btn-outline-warning{% else %}btn-outline-success{% endif %} btn-sm rounded-pill px-3 text-nowrap">
+                                                    {% if service.is_active %}Deactivate{% else %}Activate{% endif %}
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                                 {% empty %}
@@ -115,10 +134,105 @@
     </div>
 </div>
 
+<div class="modal fade" id="editServiceModal" tabindex="-1" aria-labelledby="editServiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 15px;">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="editServiceModalLabel"><i
+                        class="bi bi-pencil-square text-primary"></i> Edit Service</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editServiceForm" method="POST" action="">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Service Name</label>
+                        <input type="text" name="name" id="edit_name" class="form-control" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Min Price (RM)</label>
+                            <input type="number" name="min_price" id="edit_min_price" step="0.01" class="form-control"
+                                required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Max Price (RM)</label>
+                            <input type="number" name="max_price" id="edit_max_price" step="0.01" class="form-control"
+                                required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Price Note</label>
+                        <input type="text" name="price_note" id="edit_price_note" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Approx. Duration (Mins)</label>
+                        <input type="number" name="duration_minutes" id="edit_duration_minutes" class="form-control" min="1" max="300" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
 <style>
-    
-    .bg-success-soft { background-color: #e8f5e9; }
-    .bg-secondary-soft { background-color: #f5f5f5; }
-    .mt-n5 { margin-top: -3rem; }
+    .bg-success-soft {
+        background-color: #e8f5e9;
+    }
+
+    .bg-secondary-soft {
+        background-color: #f5f5f5;
+    }
+
+    .mt-n5 {
+        margin-top: -3rem;
+    }
+
+    .custom-modal-input {
+        border: 1px solid #ced4da !important;
+        height: 45px !important;
+        border-radius: 8px !important;
+        padding: 0.375rem 0.75rem !important;
+        background-color: #fff !important;
+        box-shadow: none !important;
+    }
+
+    .custom-modal-input:focus {
+        border-color: #86b7fe !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    }
 </style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const editButtons = document.querySelectorAll('.edit-service-btn');
+        const editForm = document.getElementById('editServiceForm');
+
+        editButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                // 1. 获取按钮上传递的数据
+                const id = this.getAttribute('data-id');
+                const name = this.getAttribute('data-name');
+                const minPrice = this.getAttribute('data-min');
+                const maxPrice = this.getAttribute('data-max');
+                const priceNote = this.getAttribute('data-note');
+                const duration = this.getAttribute('data-duration_minutes');
+
+                // 2. 动态塞进 Modal 的 Input 框里
+                document.getElementById('edit_name').value = name;
+                document.getElementById('edit_min_price').value = minPrice;
+                document.getElementById('edit_max_price').value = maxPrice;
+                document.getElementById('edit_price_note').value = priceNote;
+                document.getElementById('edit_duration_minutes').value = duration;
+
+                // 3. 动态改变 Form 的 action 提交路径
+                editForm.action = "{% url 'edit_service' 99999 %}".replace('99999', id);
+            });
+        });
+    });
+</script>
 {% endblock %}
