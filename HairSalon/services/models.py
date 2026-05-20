@@ -128,3 +128,23 @@ class UserProfile(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         UserProfile.objects.create(user=instance)
+
+class StaffReview(models.Model):
+    staff = models.ForeignKey(Staff, on_delete=models.CASCADE, related_name='reviews')
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='staff_reviews')
+    rating = models.IntegerField(default=5, verbose_name="Rating (1-5)")
+    comment = models.TextField(blank=True, null=True, verbose_name="Comment")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.customer.username} - {self.staff.name} - {self.rating} Stars"
+
+class SalonReview(models.Model):
+    salon = models.ForeignKey(Salon, on_delete=models.CASCADE, related_name='reviews')
+    customer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='salon_reviews')
+    rating = models.IntegerField(default=5, verbose_name="Rating (1-5)")
+    comment = models.TextField(blank=True, null=True, verbose_name="Comment")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.customer.username} - {self.salon.name} - {self.rating} Stars"

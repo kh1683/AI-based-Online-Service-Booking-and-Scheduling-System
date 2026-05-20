@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from .models import Salon, Staff, Service, Booking, UserProfile
 from .forms import StaffForm, ServiceForm, BookingForm, SalonForm, UserForm, UserProfileForm, SalonLocationForm, SalonImageForm
 from datetime import date, timedelta
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Avg
 from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
 from django.contrib.auth import login, update_session_auth_hash
 from django import forms
@@ -148,6 +148,21 @@ def create_booking(request, salon_id):
 
     salon = Salon.objects.get(id=salon_id)
     
+    # Calculate Cancel URL dynamically
+    from django.urls import reverse
+    selected_staff_id = request.GET.get('staff') or request.POST.get('staff')
+    cancel_to = request.GET.get('cancel_to') or request.POST.get('cancel_to')
+    
+    if cancel_to == 'staff' and selected_staff_id:
+        cancel_url = reverse('staff_detail', kwargs={'staff_id': selected_staff_id})
+    else:
+        cancel_url = reverse('salon_detail', kwargs={'salon_id': salon.id})
+        
+    context = {
+        'salon': salon,
+        'cancel_url': cancel_url
+    }
+    
     if request.method == 'POST':
         date_str = request.POST.get('booking_date') 
         booking_date = datetime.strptime(date_str, '%Y-%m-%d').date()
@@ -163,7 +178,7 @@ def create_booking(request, salon_id):
                 messages.error(request, "You cannot book a date in the past!")
                 form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
                 form.fields['service'].queryset = Service.objects.filter(salon=salon)
-                return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
+                return render(request, 'services/create_booking.html', {**context, 'form': form})
             
             # 🚩 2. Operating hours interception：10:00 - 19:00 (7 p.m.)
             start_time = time(10, 0) # 10:00 AM
@@ -173,14 +188,14 @@ def create_booking(request, salon_id):
                 messages.error(request, f"❌ Booking failed! Salon operating hours are 10:00 AM - 07:00 PM.")
                 form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
                 form.fields['service'].queryset = Service.objects.filter(salon=salon)
-                return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
+                return render(request, 'services/create_booking.html', {**context, 'form': form})
 
             # 🚩 3. If today, check if time has passed
             if booking.booking_date == today and booking.timeslot < now_local.time():
                 messages.error(request, "❌ This time has already passed. Please select a later time.")
                 form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
                 form.fields['service'].queryset = Service.objects.filter(salon=salon)
-                return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
+                return render(request, 'services/create_booking.html', {**context, 'form': form})
 
             
             booking.salon = salon
@@ -219,7 +234,7 @@ def create_booking(request, salon_id):
                     messages.error(request, "❌ Sorry, no stylists are available at this time due to overlapping appointments. Please choose another time.")
                     form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
                     form.fields['service'].queryset = Service.objects.filter(salon=salon)
-                    return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
+                    return render(request, 'services/create_booking.html', {**context, 'form': form})
 
             else:
                 # Specific staff check with overlap logic
@@ -235,7 +250,7 @@ def create_booking(request, salon_id):
                     messages.error(request, f"❌ Sorry, {booking.staff.name} is busy during this time (including service cooling time). Please choose another time or stylist.")
                     form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
                     form.fields['service'].queryset = Service.objects.filter(salon=salon)
-                    return render(request, 'services/create_booking.html', {'form': form, 'salon': salon})
+                    return render(request, 'services/create_booking.html', {**context, 'form': form})
                 
                 booking.status = 'confirmed'
                 booking.save()
@@ -245,13 +260,22 @@ def create_booking(request, salon_id):
            
     else:
         selected_service_id = request.GET.get('service')
-        form = BookingForm(salon=salon, initial={'service': selected_service_id})
+        selected_staff_id = request.GET.get('staff')
+        selected_date = request.GET.get('date')
+        selected_time = request.GET.get('time')
+        initial_data = {}
+        if selected_service_id:
+            initial_data['service'] = selected_service_id
+        if selected_staff_id:
+            initial_data['staff'] = selected_staff_id
+        if selected_date:
+            initial_data['booking_date'] = selected_date
+        if selected_time:
+            initial_data['timeslot'] = selected_time
+        form = BookingForm(salon=salon, initial=initial_data)
         form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True) 
         form.fields['service'].queryset = Service.objects.filter(salon=salon)
-    return render(request, 'services/create_booking.html', {
-        'form': form,
-        'salon': salon
-    })
+    return render(request, 'services/create_booking.html', {**context, 'form': form})
     
 @login_required
 def approve_booking(request, booking_id):
@@ -362,9 +386,15 @@ def create_salon(request):
     return render(request, 'services/create_salon.html', {'form': form})
 
 def salon_list(request):
-    
     from .models import Salon
+    from django.db.models import Avg
     salons = Salon.objects.all()
+    for s in salons:
+        s_reviews = s.reviews.all().order_by('-created_at')
+        s_avg = s_reviews.aggregate(Avg('rating'))['rating__avg']
+        s.avg_rating = round(s_avg, 1) if s_avg is not None else None
+        s.reviews_count = s_reviews.count()
+        s.latest_review = s_reviews.first()
     return render(request, 'services/salon_list.html', {'salons': salons})  
 
 @login_required
@@ -541,15 +571,35 @@ def edit_service(request, service_id):
 
 
 def salon_detail(request, salon_id):
-    
     salon = get_object_or_404(Salon, id=salon_id)
-    
-    
     services = Service.objects.filter(salon=salon, is_active=True)
     
+    # Fetch active stylists and their average rating and latest feedback
+    staff_members = Staff.objects.filter(salon=salon, is_active=True)
+    for s in staff_members:
+        s_reviews = s.reviews.all().order_by('-created_at')
+        s_avg = s_reviews.aggregate(Avg('rating'))['rating__avg']
+        s.avg_rating = round(s_avg, 1) if s_avg is not None else None
+        s.reviews_count = s_reviews.count()
+        s.latest_review = s_reviews.first()
+
+    # Fetch salon reviews and statistics
+    salon_reviews = salon.reviews.all().order_by('-created_at')
+    salon_avg = salon_reviews.aggregate(Avg('rating'))['rating__avg']
+    salon.avg_rating = round(salon_avg, 1) if salon_avg is not None else None
+    salon.reviews_count = salon_reviews.count()
+    salon.latest_review = salon_reviews.first()
+    
+    user_salon_review = None
+    if request.user.is_authenticated:
+        user_salon_review = salon_reviews.filter(customer=request.user).first()
+        
     return render(request, 'services/salon_detail.html', {
         'salon': salon,
-        'services': services
+        'services': services,
+        'staff_members': staff_members,
+        'salon_reviews': salon_reviews,
+        'user_salon_review': user_salon_review
     })
     
 def forgot_password(request):
@@ -756,5 +806,139 @@ def get_ai_recommendations(request):
         return JsonResponse({'status': 'success', 'recommended_slots': recommendations})
         
     return JsonResponse({'status': 'error', 'message': 'Missing parameters'})
+
+
+def staff_detail(request, staff_id):
+    from .models import StaffReview, Staff, Booking
+    from django.db.models import Avg
+    from datetime import date, timedelta
+    
+    staff = get_object_or_404(Staff, id=staff_id, is_active=True)
+    reviews = staff.reviews.all().order_by('-created_at')
+    
+    # Handle Staff Review submission
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            messages.error(request, "Please log in to submit feedback.")
+            return redirect('login')
+            
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment', '').strip()
+        
+        if rating:
+            try:
+                rating = int(rating)
+                if 1 <= rating <= 5:
+                    review, created = StaffReview.objects.update_or_create(
+                        staff=staff,
+                        customer=request.user,
+                        defaults={'rating': rating, 'comment': comment if comment else None}
+                    )
+                    if created:
+                        messages.success(request, f"Feedback submitted successfully for {staff.name}!")
+                    else:
+                        messages.success(request, f"Your feedback for {staff.name} has been updated!")
+                else:
+                    messages.error(request, "Rating must be between 1 and 5.")
+            except ValueError:
+                messages.error(request, "Invalid rating.")
+        else:
+            messages.error(request, "Rating is required.")
+        return redirect('staff_detail', staff_id=staff.id)
+
+    # Average rating calculations
+    avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+    if avg_rating is not None:
+        avg_rating = round(avg_rating, 1)
+        full_stars = range(int(avg_rating))
+        half_star = 1 if (avg_rating - int(avg_rating)) >= 0.5 else 0
+        empty_stars = range(5 - int(avg_rating) - half_star)
+    else:
+        avg_rating = "No ratings yet"
+        full_stars = []
+        half_star = 0
+        empty_stars = range(5)
+
+    # 7-Day occupancies
+    today = date.today()
+    schedule_days = []
+    
+    # Generate list of slots from 10:00 to 19:00
+    from datetime import time as python_time, datetime as python_datetime
+    working_hours = [python_time(hour, 0) for hour in range(10, 20)]
+    
+    for i in range(7):
+        day = today + timedelta(days=i)
+        day_bookings = Booking.objects.filter(
+            staff=staff,
+            booking_date=day,
+            status__in=['pending', 'confirmed']
+        )
+        
+        slots_info = []
+        for slot_time in working_hours:
+            is_booked = False
+            for booking in day_bookings:
+                booking_end = booking.end_time if booking.end_time else (python_datetime.combine(date.today(), booking.timeslot) + timedelta(minutes=booking.service.duration_minutes)).time()
+                if booking.timeslot <= slot_time < booking_end:
+                    is_booked = True
+                    break
+            slots_info.append({
+                'time': slot_time,
+                'is_booked': is_booked
+            })
+            
+        schedule_days.append({
+            'date': day,
+            'slots': slots_info,
+            'has_bookings': day_bookings.exists()
+        })
+
+    user_review = None
+    if request.user.is_authenticated:
+        user_review = reviews.filter(customer=request.user).first()
+
+    return render(request, 'services/staff_detail.html', {
+        'staff': staff,
+        'reviews': reviews,
+        'avg_rating': avg_rating,
+        'full_stars': full_stars,
+        'half_star': half_star,
+        'empty_stars': empty_stars,
+        'schedule_days': schedule_days,
+        'user_review': user_review
+    })
+
+
+@login_required
+def submit_salon_review(request, salon_id):
+    from .models import SalonReview, Salon
+    salon = get_object_or_404(Salon, id=salon_id)
+    
+    if request.method == 'POST':
+        rating = request.POST.get('rating')
+        comment = request.POST.get('comment', '').strip()
+        
+        if rating:
+            try:
+                rating = int(rating)
+                if 1 <= rating <= 5:
+                    review, created = SalonReview.objects.update_or_create(
+                        salon=salon,
+                        customer=request.user,
+                        defaults={'rating': rating, 'comment': comment if comment else None}
+                    )
+                    if created:
+                        messages.success(request, f"Thank you for reviewing {salon.name}!")
+                    else:
+                        messages.success(request, f"Your review for {salon.name} has been updated!")
+                else:
+                    messages.error(request, "Rating must be between 1 and 5.")
+            except ValueError:
+                messages.error(request, "Invalid rating.")
+        else:
+            messages.error(request, "Rating is required.")
+            
+    return redirect('salon_detail', salon_id=salon.id)
 
 
