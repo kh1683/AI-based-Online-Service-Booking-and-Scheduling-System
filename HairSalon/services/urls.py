@@ -1,6 +1,7 @@
 from django.urls import path, include
+from django.contrib.auth import views as auth_views
+from django.conf import settings
 from . import views
-from services import views
 
 urlpatterns = [
     
@@ -12,6 +13,7 @@ urlpatterns = [
     path('change-password/', views.custom_password_change, name='custom_password_change'),
     path('edit-salon-location/', views.edit_salon_location, name='edit_salon_location'),
     path('edit-salon-image/', views.edit_salon_image, name='edit_salon_image'),
+    path('accounts/login/', auth_views.LoginView.as_view(extra_context={'google_client_id': settings.GOOGLE_CLIENT_ID}), name='login'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('dashboard/', views.salon_dashboard, name='dashboard'),
     # path('add-staff/', views.add_staff, name='add_staff'),
@@ -26,6 +28,7 @@ urlpatterns = [
     path('create-salon/', views.create_salon, name='create_salon'),
     path('salon_list/', views.salon_list, name='salon_list'),
     path('my-bookings/', views.my_bookings, name='my_bookings'),
+    path('booking/<int:booking_id>/', views.booking_detail, name='booking_detail'),
     path('booking/<int:booking_id>/cancel/', views.cancel_booking, name='cancel_booking'),
     path('manage-staff/', views.manage_staff, name='manage_staff'),
     path('staff/<int:staff_id>/toggle/', views.toggle_staff_status, name='toggle_staff_status'),

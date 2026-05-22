@@ -40,7 +40,7 @@
                                 </td>
                                 <td>
                                     <div class="small fw-bold">{{ booking.booking_date }}</div>
-                                    <div class="text-muted small">{{ booking.timeslot }}</div>
+                                    <div class="text-muted small">{{ booking.timeslot|time:"g:i A" }}</div>
                                 </td>
                                 <td>
                                     {% if booking.status == 'confirmed' %}

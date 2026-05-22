@@ -229,7 +229,7 @@ def create_booking(request, salon_id):
                     booking.status = 'confirmed'
                     messages.success(request, f'Appointment booked! You have been auto-assigned to {available_staff.name}.')
                     booking.save()
-                    return redirect('my_bookings')
+                    return redirect('booking_detail', booking_id=booking.id)
                 else:
                     messages.error(request, "❌ Sorry, no stylists are available at this time due to overlapping appointments. Please choose another time.")
                     form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
@@ -255,7 +255,7 @@ def create_booking(request, salon_id):
                 booking.status = 'confirmed'
                 booking.save()
                 messages.success(request, f'Appointment confirmed with {booking.staff.name}!')
-                return redirect('my_bookings')
+                return redirect('booking_detail', booking_id=booking.id)
             
            
     else:
@@ -432,6 +432,27 @@ def my_bookings(request):
     return render(request, 'services/my_bookings.html', {
         'page_obj': page_obj,
         'elided_page_range': elided_page_range
+    })
+
+
+@login_required
+def booking_detail(request, booking_id):
+    """View detailed information of a specific booking."""
+    booking = get_object_or_404(Booking, id=booking_id)
+    
+    is_customer = (booking.customer == request.user)
+    is_owner = (booking.salon.owner == request.user)
+    is_staff = (booking.staff.user == request.user) if (booking.staff and booking.staff.user) else False
+    
+    if not (is_customer or is_owner or is_staff):
+        messages.error(request, "You do not have permission to view this booking details.")
+        return redirect('home')
+        
+    return render(request, 'services/booking_detail.html', {
+        'booking': booking,
+        'is_customer': is_customer,
+        'is_owner': is_owner,
+        'is_staff': is_staff
     })
 
 
@@ -799,13 +820,97 @@ def custom_password_change(request):
 def get_ai_recommendations(request):
     salon_id = request.GET.get('salon_id')
     date_str = request.GET.get('date') # 格式：2026-05-20
+    staff_id = request.GET.get('staff_id')
+    service_id = request.GET.get('service_id')
     
-    if salon_id and date_str:
-        # 🚩 调用 AI 推荐引擎
-        recommendations = get_optimal_time_slots(salon_id, date_str)
-        return JsonResponse({'status': 'success', 'recommended_slots': recommendations})
+    if not (salon_id and date_str):
+        return JsonResponse({'status': 'error', 'message': 'Missing parameters'})
         
-    return JsonResponse({'status': 'error', 'message': 'Missing parameters'})
+    try:
+        booking_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+    except ValueError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid date format'})
+
+    salon = get_object_or_404(Salon, id=salon_id)
+    
+    active_staffs = Staff.objects.filter(salon=salon, is_active=True)
+    if staff_id and staff_id != '' and staff_id != 'None':
+        try:
+            active_staffs = active_staffs.filter(id=int(staff_id))
+        except ValueError:
+            pass
+            
+    duration_minutes = 30
+    if service_id:
+        try:
+            service = Service.objects.get(id=int(service_id), salon=salon)
+            duration_minutes = service.duration_minutes
+        except (Service.DoesNotExist, ValueError):
+            pass
+
+    # Standard operating hours: 10:00 AM - 07:00 PM (10:00 to 19:00 inclusive)
+    candidate_slots = []
+    for hour in range(10, 20):  # 10 to 19
+        candidate_slots.append(time(hour, 0))
+        
+    now_local = timezone.localtime(timezone.now())
+    today = now_local.date()
+    current_time = now_local.time()
+    
+    available_slots = []
+    
+    for slot_time in candidate_slots:
+        # If booking date is today, remove time slots that have already passed
+        if booking_date == today and slot_time <= current_time:
+            continue
+            
+        slot_datetime = datetime.combine(booking_date, slot_time)
+        slot_end_datetime = slot_datetime + timedelta(minutes=duration_minutes)
+        slot_end_time = slot_end_datetime.time()
+        
+        has_available_staff = False
+        for staff in active_staffs:
+            conflict = Booking.objects.filter(
+                staff=staff,
+                booking_date=booking_date,
+                status__in=['pending', 'confirmed']
+            ).filter(
+                timeslot__lt=slot_end_time,
+                end_time__gt=slot_time
+            ).exists()
+            
+            if not conflict:
+                has_available_staff = True
+                break
+                
+        if has_available_staff:
+            available_slots.append(slot_time.strftime('%H:%M'))
+
+    is_stylist_chosen = (staff_id and staff_id != '' and staff_id != 'None')
+    
+    if is_stylist_chosen:
+        return JsonResponse({
+            'status': 'success',
+            'recommended_slots': available_slots,
+            'is_optimal': False
+        })
+    else:
+        optimal_slots = get_optimal_time_slots(salon_id, date_str)
+        filtered_optimal = [slot for slot in optimal_slots if slot in available_slots]
+        
+        for slot in available_slots:
+            if len(filtered_optimal) >= 3:
+                break
+            if slot not in filtered_optimal:
+                filtered_optimal.append(slot)
+                
+        return JsonResponse({
+            'status': 'success',
+            'recommended_slots': filtered_optimal[:3],
+            'is_optimal': True
+        })
+
+
 
 
 def staff_detail(request, staff_id):
