@@ -1,0 +1,158 @@
+{% extends 'services/base.html' %}
+
+{% block header_content %}
+<div class="d-flex align-items-center justify-content-center">
+    <a href="{% url 'my_bookings' %}" class="btn btn-light btn-sm rounded-circle shadow-sm me-3"
+        style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+        <i class="bi bi-arrow-left text-primary"></i>
+    </a>
+    <h1 class="display-5 fw-bold mb-0">Booking Details</h1>
+</div>
+<p class="lead opacity-75 mt-2">Here is the detailed summary of your appointment.</p>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+        <!-- Status Banner -->
+        <div class="card shadow-sm border-0 mb-4 text-center p-4" 
+             style="border-radius: 20px; background: {% if booking.status == 'confirmed' %}linear-gradient(135deg, #e8f5e9, #c8e6c9){% elif booking.status == 'pending' %}linear-gradient(135deg, #fff8e1, #ffe082){% else %}linear-gradient(135deg, #ffebee, #ffcdd2){% endif %};">
+            <div class="card-body">
+                {% if booking.status == 'confirmed' %}
+                    <i class="bi bi-check-circle-fill text-success display-3 mb-3"></i>
+                    <h3 class="fw-bold text-success">Appointment Confirmed!</h3>
+                    <p class="text-secondary mb-0">Your appointment is confirmed and scheduled with the stylist.</p>
+                {% elif booking.status == 'pending' %}
+                    <i class="bi bi-clock-history text-warning display-3 mb-3"></i>
+                    <h3 class="fw-bold text-warning">Booking Pending</h3>
+                    <p class="text-secondary mb-0">Your appointment request is pending approval.</p>
+                {% else %}
+                    <i class="bi bi-x-circle-fill text-danger display-3 mb-3"></i>
+                    <h3 class="fw-bold text-danger">Booking Cancelled</h3>
+                    <p class="text-secondary mb-0">This booking has been cancelled.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Details Card -->
+        <div class="card shadow border-0 p-4 p-md-5 mb-4" style="border-radius: 20px;">
+            <div class="card-body p-0">
+                <div class="row mb-4 pb-4 border-bottom">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <label class="text-uppercase text-secondary fw-bold small tracking-wider">Salon</label>
+                        <h4 class="fw-bold text-dark mt-1">{{ booking.salon.name }}</h4>
+                        <p class="text-muted small mb-0"><i class="bi bi-geo-alt-fill me-1 text-primary"></i>{{ booking.salon.location }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-uppercase text-secondary fw-bold small tracking-wider">Service</label>
+                        <h4 class="fw-bold text-primary mt-1">{{ booking.service.name }}</h4>
+                        <p class="text-muted mb-0 small">
+                            <i class="bi bi-hourglass-split me-1 text-primary"></i>{{ booking.service.duration_minutes }} minutes
+                            <span class="mx-2 text-secondary">|</span>
+                            <i class="bi bi-currency-exchange me-1 text-primary"></i>RM {{ booking.service.min_price }} - {{ booking.service.max_price }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="row mb-4 pb-4 border-bottom">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <label class="text-uppercase text-secondary fw-bold small tracking-wider">Date & Time</label>
+                        <h5 class="fw-bold mt-1 text-dark">
+                            <i class="bi bi-calendar3 me-2 text-primary"></i>{{ booking.booking_date }}
+                        </h5>
+                        <h5 class="fw-bold text-dark">
+                            <i class="bi bi-clock me-2 text-primary"></i>{{ booking.timeslot|time:"g:i A" }}
+                        </h5>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-uppercase text-secondary fw-bold small tracking-wider">Assigned Stylist</label>
+                        <div class="d-flex align-items-center mt-2">
+                            {% if booking.staff.image %}
+                                <img src="{{ booking.staff.image.url }}" alt="{{ booking.staff.name }}" class="rounded-circle me-3 shadow-sm" style="width: 55px; height: 55px; object-fit: cover;">
+                            {% else %}
+                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-3 shadow-sm text-primary" style="width: 55px; height: 55px;">
+                                    <i class="bi bi-person-badge-fill fs-3"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h6 class="fw-bold mb-0 text-dark">{{ booking.staff.name }}</h6>
+                                <p class="text-muted small mb-0">{{ booking.staff.role|default:"General Stylist" }}</p>
+                                {% if booking.staff.specialty %}
+                                    <span class="badge bg-light text-secondary border small mt-1">{{ booking.staff.specialty }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <style>
+                    .btn-custom-action {
+                        height: 46px;
+                        white-space: nowrap !important;
+                        transition: all 0.2s ease-in-out;
+                    }
+                    .btn-custom-action:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+                    }
+                    .btn-custom-action:active {
+                        transform: translateY(0);
+                    }
+                    .btn-theme-gradient {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        border: none;
+                        color: white;
+                    }
+                    .btn-theme-gradient:hover {
+                        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+                        color: white;
+                    }
+                </style>
+                <div class="d-flex flex-column flex-sm-row justify-content-sm-between align-items-stretch align-items-sm-center gap-3 pt-3">
+                    <div class="d-flex flex-column flex-sm-row gap-2 align-items-stretch align-items-sm-center">
+                        <a href="{% url 'my_bookings' %}" class="btn btn-outline-secondary rounded-pill px-4 d-inline-flex align-items-center justify-content-center fw-semibold btn-custom-action">
+                            <i class="bi bi-list-task me-2"></i> My Appointments
+                        </a>
+                        <a href="{% url 'salon_list' %}" class="btn btn-theme-gradient rounded-pill px-4 d-inline-flex align-items-center justify-content-center fw-semibold btn-custom-action shadow-sm">
+                            <i class="bi bi-house-door-fill me-2"></i> Home
+                        </a>
+                    </div>
+                    
+                    {% if booking.status == 'pending' or booking.status == 'confirmed' %}
+                        <button type="button" 
+                                class="btn btn-outline-danger rounded-pill px-4 d-inline-flex align-items-center justify-content-center fw-semibold btn-custom-action"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#cancelModal">
+                            <i class="bi bi-x-circle me-2"></i> Cancel Appointment
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Confirmation Modal -->
+{% if booking.status == 'pending' or booking.status == 'confirmed' %}
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 15px;">
+            <div class="modal-header border-bottom-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold text-danger" id="cancelModalLabel">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>Cancel Appointment
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 pb-4">
+                <p class="text-secondary">Are you sure you want to cancel your appointment for <strong>{{ booking.service.name }}</strong> at <strong>{{ booking.salon.name }}</strong> on <strong>{{ booking.booking_date }}</strong>?</p>
+                <p class="text-muted small mb-0">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-top-0 px-4 pb-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Keep Booking</button>
+                <a href="{% url 'cancel_booking' booking.id %}" class="btn btn-danger rounded-pill px-4">Yes, Cancel It</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

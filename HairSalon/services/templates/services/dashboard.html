@@ -166,7 +166,7 @@
                                 </td>
                                 <td>
                                     <span class="text-primary fw-bold">{{ booking.booking_date }}</span><br>
-                                    <small class="text-muted">{{ booking.timeslot }}</small>
+                                    <small class="text-muted">{{ booking.timeslot|time:"g:i A" }}</small>
                                 </td>
                                 <td>
                                     <a href="{% url 'approve_booking' booking.id %}"
@@ -222,7 +222,7 @@
                             <tr>
                                 <td>{{ booking.customer.username }}</td>
                                 <td>{{ booking.staff.name }}</td>
-                                <td>{{ booking.booking_date }} | {{ booking.timeslot }}</td>
+                                <td>{{ booking.booking_date }} | {{ booking.timeslot|time:"g:i A" }}</td>
                                 <td><span class="badge bg-success">Ready</span></td>
                                 <td>
                                     <button type="button" 

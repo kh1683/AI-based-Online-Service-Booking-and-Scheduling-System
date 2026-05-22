@@ -33,11 +33,11 @@
                     {% endfor %}
 
                     <!-- AI Optimal Booking Times Card -->
-                    <div class="card shadow-sm border-0 p-4 mb-4" style="border-radius: 15px; background: linear-gradient(145deg, #ffffff, #f3f0ff);">
-                        <h6 class="fw-bold text-purple mb-3">
+                    <div id="slots-recommendation-card" class="card shadow-sm border-0 p-4 mb-4" style="border-radius: 15px; background: linear-gradient(145deg, #ffffff, #f3f0ff);">
+                        <h6 id="slots-card-header" class="fw-bold text-purple mb-3">
                             <i class="bi bi-stars"></i> AI Optimal Booking Times
                         </h6>
-                        <p class="text-muted small">Based on system historical analysis and provider efficiency, we recommend these slots to avoid long waiting times:</p>
+                        <p id="slots-card-subtitle" class="text-muted small">Based on system historical analysis and provider efficiency, we recommend these slots to avoid long waiting times:</p>
                         
                         <div id="ai-slots-container" class="d-flex gap-2 flex-wrap">
                             <span class="text-muted small">Please select a date first to calculate optimal times...</span>
@@ -55,36 +55,89 @@
         </div>
 
         <script>
-        document.getElementById('booking_date_input').addEventListener('change', function() {
-            const selectedDate = this.value;
-            const salonId = "{{ salon.id }}"; // 当前店面 ID
-            const container = document.getElementById('ai-slots-container');
+        function updateSlots() {
+            const dateInput = document.getElementById('booking_date_input');
+            if (!dateInput) return;
+            const selectedDate = dateInput.value;
+            if (!selectedDate) {
+                return;
+            }
+            const salonId = "{{ salon.id }}";
             
-            container.innerHTML = '<span class="spinner-border spinner-border-sm text-primary"></span> Calculating optimal times...';
+            const staffSelect = document.getElementById('id_staff');
+            const serviceSelect = document.getElementById('id_service');
+            
+            const staffId = staffSelect ? staffSelect.value : '';
+            const serviceId = serviceSelect ? serviceSelect.value : '';
+            
+            const container = document.getElementById('ai-slots-container');
+            const cardElement = document.getElementById('slots-recommendation-card');
+            const cardHeader = document.getElementById('slots-card-header');
+            const cardSubtitle = document.getElementById('slots-card-subtitle');
+            
+            if (staffId && staffId !== '') {
+                // Specific Stylist Chosen
+                cardHeader.innerHTML = '<i class="bi bi-calendar3"></i> Available Time Slots';
+                cardSubtitle.innerText = 'Select an available scheduling time slot for your chosen stylist on this day:';
+                cardElement.style.background = 'linear-gradient(145deg, #ffffff, #f0f7ff)';
+                cardHeader.className = 'fw-bold text-primary mb-3';
+            } else {
+                // Auto Arrange Chosen
+                cardHeader.innerHTML = '<i class="bi bi-stars"></i> AI Optimal Booking Times';
+                cardSubtitle.innerText = 'Based on system historical analysis and provider efficiency, we recommend these slots to avoid long waiting times:';
+                cardElement.style.background = 'linear-gradient(145deg, #ffffff, #f3f0ff)';
+                cardHeader.className = 'fw-bold text-purple mb-3';
+            }
+            
+            container.innerHTML = '<span class="spinner-border spinner-border-sm text-primary"></span> Loading available times...';
 
-            fetch(`/services/api/ai-recommendations/?salon_id=${salonId}&date=${selectedDate}`)
+            fetch(`/services/api/ai-recommendations/?salon_id=${salonId}&date=${selectedDate}&staff_id=${staffId}&service_id=${serviceId}`)
                 .then(response => response.json())
                 .then(data => {
-                    container.innerHTML = ''; // 清空
+                    container.innerHTML = '';
                     if (data.status === 'success' && data.recommended_slots.length > 0) {
                         data.recommended_slots.forEach(slot => {
-                            // 渲染漂亮的推荐按钮/标签
-                            container.innerHTML += `
-                                <button type="button" class="btn btn-sm btn-outline-purple rounded-pill shadow-sm ai-slot-btn" onclick="selectTime('${slot}')">
-                                    🔥 ${slot} (Optimal)
-                                </button>
-                            `;
+                            if (data.is_optimal) {
+                                container.innerHTML += `
+                                    <button type="button" class="btn btn-sm btn-outline-purple rounded-pill shadow-sm ai-slot-btn" onclick="selectTime('${slot}')">
+                                        🔥 ${slot} (Optimal)
+                                    </button>
+                                `;
+                            } else {
+                                container.innerHTML += `
+                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill shadow-sm ai-slot-btn" onclick="selectTime('${slot}')">
+                                        ${slot}
+                                    </button>
+                                `;
+                            }
                         });
                     } else {
-                        container.innerHTML = '<span class="text-muted small">No specific data. Standard slots available.</span>';
+                        container.innerHTML = '<span class="text-muted small">No slots available for the selected choices on this day.</span>';
                     }
                 });
-        });
+        }
 
         function selectTime(time) {
             // 自动帮用户填入原生时间输入框
             document.getElementById('booking_time_input').value = time;
         }
+
+        document.getElementById('booking_date_input').addEventListener('change', updateSlots);
+        
+        const staffSelect = document.getElementById('id_staff');
+        if (staffSelect) {
+            staffSelect.addEventListener('change', updateSlots);
+        }
+        
+        const serviceSelect = document.getElementById('id_service');
+        if (serviceSelect) {
+            serviceSelect.addEventListener('change', updateSlots);
+        }
+        
+        // Also call updateSlots on page load if date is already filled (e.g. from query params)
+        window.addEventListener('DOMContentLoaded', (event) => {
+            updateSlots();
+        });
         </script>
 
         <style>

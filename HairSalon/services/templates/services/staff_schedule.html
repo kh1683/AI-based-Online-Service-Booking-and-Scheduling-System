@@ -15,7 +15,7 @@
                 {% for task in tasks %}
                 <div class="d-flex align-items-center p-3 mb-3 border rounded shadow-sm bg-white">
                     <div class="flex-shrink-0 text-center me-4 border-end pe-4">
-                        <div class="h4 mb-0 text-primary">{{ task.timeslot }}</div>
+                        <div class="h4 mb-0 text-primary">{{ task.timeslot|time:"g:i A" }}</div>
                         <small class="text-muted">{{ task.booking_date }}</small>
                     </div>
                     <div class="flex-grow-1">
