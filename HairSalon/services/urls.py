@@ -16,6 +16,8 @@ urlpatterns = [
     path('accounts/login/', auth_views.LoginView.as_view(extra_context={'google_client_id': settings.GOOGLE_CLIENT_ID}), name='login'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('dashboard/', views.salon_dashboard, name='dashboard'),
+    path('dashboard/history/', views.merchant_booking_history, name='merchant_booking_history'),
+    path('booking/<int:booking_id>/complete/', views.complete_booking, name='complete_booking'),
     # path('add-staff/', views.add_staff, name='add_staff'),
     # path('add-service/', views.add_service, name='add_service'),
     path('manage-services/', views.manage_services, name='manage_services'),

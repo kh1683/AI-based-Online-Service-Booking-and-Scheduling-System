@@ -74,6 +74,7 @@ def salon_dashboard(request):
     
     pending_bookings = salon.bookings.filter(status='pending').order_by('booking_date', 'timeslot')
     confirmed_bookings = salon.bookings.filter(status='confirmed').order_by('booking_date', 'timeslot')
+    recent_history = salon.bookings.filter(status__in=['completed', 'cancelled']).order_by('-booking_date', '-timeslot')[:5]
     
     for b in pending_bookings:
         is_conflicted = salon.bookings.filter(
@@ -91,6 +92,7 @@ def salon_dashboard(request):
         'services': services,
         'pending_bookings': pending_bookings,  
         'confirmed_bookings': confirmed_bookings, 
+        'recent_history': recent_history,
         'busy_slots': busy_slots,
         'hourly_stats': hourly_stats,
         
@@ -164,9 +166,6 @@ def create_booking(request, salon_id):
     }
     
     if request.method == 'POST':
-        date_str = request.POST.get('booking_date') 
-        booking_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        
         form = BookingForm(request.POST, salon=salon)
         if form.is_valid():
             booking = form.save(commit=False)
@@ -296,6 +295,46 @@ def reject_booking(request, booking_id):
     booking.save()
     
     return redirect('dashboard')
+
+@login_required
+def complete_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id, salon__owner=request.user)
+    if booking.status == 'confirmed':
+        booking.status = 'completed'
+        booking.save()
+        messages.success(request, f"Booking for {booking.customer.username} has been marked as Completed!")
+    else:
+        messages.error(request, "Only confirmed bookings can be marked as completed.")
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
+
+@login_required
+def merchant_booking_history(request):
+    try:
+        salon = Salon.objects.get(owner=request.user)
+    except Salon.DoesNotExist:
+        messages.error(request, "Only merchants with a registered salon can view booking history.")
+        return redirect('home')
+
+    status_filter = request.GET.get('status', 'all')
+    bookings_list = Booking.objects.filter(salon=salon)
+    
+    if status_filter in ['completed', 'cancelled', 'confirmed', 'pending']:
+        bookings_list = bookings_list.filter(status=status_filter)
+        
+    bookings_list = bookings_list.order_by('-booking_date', '-timeslot')
+    
+    # Paginate by 15 bookings per page
+    paginator = Paginator(bookings_list, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    elided_page_range = paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
+    
+    return render(request, 'services/merchant_booking_history.html', {
+        'salon': salon,
+        'page_obj': page_obj,
+        'elided_page_range': elided_page_range,
+        'status_filter': status_filter
+    })
 
 @login_required
 def staff_schedule(request):

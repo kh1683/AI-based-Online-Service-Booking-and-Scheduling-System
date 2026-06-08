@@ -1,0 +1,245 @@
+{% extends 'services/base.html' %}
+
+{% block title %}Booking History | {{ salon.name }}{% endblock %}
+
+{% block header_content %}
+<div class="d-flex align-items-center justify-content-center">
+    <a href="{% url 'dashboard' %}" class="btn btn-light btn-sm rounded-circle shadow-sm me-3"
+        style="width: 35px; height: 35px; display: flex; align-items: center; justify-content: center;">
+        <i class="bi bi-arrow-left text-primary"></i>
+    </a>
+    <h1 class="display-5 fw-bold mb-0">Booking History</h1>
+</div>
+<p class="lead opacity-75 mt-2">Manage and review all historical bookings and scheduling transactions.</p>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-11 col-lg-10">
+        <!-- Status Filter Tabs -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="btn-group shadow-sm bg-white p-1" style="border-radius: 50px;">
+                <a href="?status=all" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'all' %}btn-primary{% else %}btn-light text-secondary{% endif %}">
+                    All
+                </a>
+                <a href="?status=pending" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'pending' %}btn-primary{% else %}btn-light text-secondary{% endif %}">
+                    Pending
+                </a>
+                <a href="?status=confirmed" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'confirmed' %}btn-primary{% else %}btn-light text-secondary{% endif %}">
+                    Confirmed
+                </a>
+                <a href="?status=completed" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'completed' %}btn-primary{% else %}btn-light text-secondary{% endif %}">
+                    Completed
+                </a>
+                <a href="?status=cancelled" class="btn btn-sm rounded-pill px-3 {% if status_filter == 'cancelled' %}btn-primary{% else %}btn-light text-secondary{% endif %}">
+                    Cancelled
+                </a>
+            </div>
+            
+            <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary px-3 py-2 rounded-pill shadow-sm">
+                <i class="bi bi-speedometer2 me-1"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <div class="card shadow-sm border-0" style="border-radius: 15px;">
+            <div class="card-body p-4">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Customer</th>
+                                <th>Service</th>
+                                <th>Staff</th>
+                                <th>Date & Time</th>
+                                <th>Status</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in page_obj %}
+                            <tr>
+                                <td>
+                                    <div class="fw-bold text-dark">{{ booking.customer.username }}</div>
+                                    <small class="text-muted">{{ booking.customer.email }}</small>
+                                </td>
+                                <td class="fw-semibold">{{ booking.service.name }}</td>
+                                <td>
+                                    <span class="text-secondary">
+                                        <i class="bi bi-person me-1"></i>{{ booking.staff.name }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="small fw-bold">{{ booking.booking_date }}</div>
+                                    <div class="text-muted small">{{ booking.timeslot|time:"g:i A" }}</div>
+                                </td>
+                                <td>
+                                    {% if booking.status == 'confirmed' %}
+                                    <span class="badge bg-success-soft text-success px-3 py-2">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Confirmed
+                                    </span>
+                                    {% elif booking.status == 'pending' %}
+                                    <span class="badge bg-warning-soft text-warning px-3 py-2">
+                                        <i class="bi bi-clock-history me-1"></i> Pending
+                                    </span>
+                                    {% elif booking.status == 'completed' %}
+                                    <span class="badge bg-info-soft text-info px-3 py-2">
+                                        <i class="bi bi-check-all me-1"></i> Completed
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-danger-soft text-danger px-3 py-2">
+                                        <i class="bi bi-x-circle me-1"></i> Cancelled
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        {% if booking.status == 'pending' %}
+                                        <a href="{% url 'approve_booking' booking.id %}" class="btn btn-sm btn-primary rounded-pill px-3">
+                                            Approve
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#actionConfirmModal"
+                                                data-action-url="{% url 'reject_booking' booking.id %}"
+                                                data-action-title="Reject Booking Request"
+                                                data-action-body="Are you sure you want to reject the booking request from <strong>{{ booking.customer.username }}</strong>?"
+                                                data-btn-class="btn-danger"
+                                                data-btn-text="Yes, Reject Request">
+                                            Reject
+                                        </button>
+                                        {% elif booking.status == 'confirmed' %}
+                                        <a href="{% url 'complete_booking' booking.id %}" class="btn btn-sm btn-success rounded-pill px-3 text-white">
+                                            <i class="bi bi-check-lg"></i> Complete
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger rounded-pill px-3"
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#actionConfirmModal"
+                                                data-action-url="{% url 'cancel_booking' booking.id %}"
+                                                data-action-title="Cancel Confirmed Booking"
+                                                data-action-body="Are you sure you want to cancel the confirmed booking for <strong>{{ booking.customer.username }}</strong>?"
+                                                data-btn-class="btn-danger"
+                                                data-btn-text="Yes, Cancel Booking">
+                                            Cancel
+                                        </button>
+                                        {% else %}
+                                        <span class="text-muted small">—</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-calendar-x display-4 text-muted"></i>
+                                    <p class="mt-3">No booking history matches the selected filter.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Controls -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link shadow-sm border-0" href="?status={{ status_filter }}&page={{ page_obj.previous_page_number }}"
+                                aria-label="Previous" style="border-radius: 10px 0 0 10px;">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link border-0" style="border-radius: 10px 0 0 10px;"><i class="bi bi-chevron-left"></i></span>
+                        </li>
+                        {% endif %}
+
+                        {% for i in elided_page_range %}
+                        {% if i == page_obj.number %}
+                        <li class="page-item active"><span class="page-link border-0">{{ i }}</span></li>
+                        {% elif i == page_obj.paginator.ELLIPSIS %}
+                        <li class="page-item disabled"><span class="page-link border-0">{{ i }}</span></li>
+                        {% else %}
+                        <li class="page-item"><a class="page-link border-0" href="?status={{ status_filter }}&page={{ i }}">{{ i }}</a></li>
+                        {% endif %}
+                        {% endfor %}
+
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link shadow-sm border-0" href="?status={{ status_filter }}&page={{ page_obj.next_page_number }}"
+                                aria-label="Next" style="border-radius: 0 10px 10px 0;">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link border-0" style="border-radius: 0 10px 10px 0;"><i class="bi bi-chevron-right"></i></span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Confirmation Modal -->
+<div class="modal fade" id="actionConfirmModal" tabindex="-1" aria-labelledby="actionConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow" style="border-radius: 15px;">
+            <div class="modal-header border-bottom-0 pt-4 px-4">
+                <h5 class="modal-title fw-bold text-dark" id="actionConfirmModalLabel">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 pb-4">
+                <p id="actionModalBodyText" class="text-secondary"></p>
+                <p class="text-muted small mb-0">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-top-0 pt-0 px-4 pb-4 justify-content-end">
+                <button type="button" class="btn btn-light rounded-pill px-4 me-2" data-bs-dismiss="modal">Cancel</button>
+                <a id="confirmActionButton" href="#" class="btn rounded-pill px-4">Confirm</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const actionConfirmModal = document.getElementById('actionConfirmModal');
+    if (actionConfirmModal) {
+        actionConfirmModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const actionUrl = button.getAttribute('data-action-url');
+            const actionTitle = button.getAttribute('data-action-title');
+            const actionBody = button.getAttribute('data-action-body');
+            const btnClass = button.getAttribute('data-btn-class') || 'btn-danger';
+            const btnText = button.getAttribute('data-btn-text') || 'Confirm';
+            
+            const modalTitle = actionConfirmModal.querySelector('#actionConfirmModalLabel');
+            const modalBody = actionConfirmModal.querySelector('#actionModalBodyText');
+            const confirmBtn = actionConfirmModal.querySelector('#confirmActionButton');
+            
+            modalTitle.textContent = actionTitle;
+            modalBody.innerHTML = actionBody;
+            confirmBtn.href = actionUrl;
+            
+            confirmBtn.className = 'btn rounded-pill px-4 ' + btnClass;
+            confirmBtn.textContent = btnText;
+        });
+    }
+});
+</script>
+
+<style>
+    .bg-success-soft { background-color: #e8f5e9; }
+    .bg-warning-soft { background-color: #fff8e1; }
+    .bg-danger-soft { background-color: #ffebee; }
+    .bg-info-soft { background-color: #e0f7fa; }
+    .table-hover tbody tr:hover { background-color: #f8f9ff; }
+</style>
+{% endblock %}
