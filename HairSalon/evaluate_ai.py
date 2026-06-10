@@ -154,7 +154,7 @@ def calculate_final_metrics(y_true_raw, y_pred_raw):
     print(f" ♦ Mean Absolute Pct Error (WAPE)   : {mape:.2f}%")
     print(f" ♦ R-squared Coefficient (R²)        : {r2:.4f}")
     print("=" * 60)
-    print("💡 Academic Tip: Copy these 4 values directly into Chapter 5 of your thesis.")
+   
 
 
 def get_optimal_suggestion(selected_date_str):
@@ -199,13 +199,14 @@ def get_optimal_suggestion(selected_date_str):
 if __name__ == '__main__':
     run_advanced_evaluation()
     
-    print("\n" + "="*60)
-    print(" 🚀 Start batch generating AI intelligent recommendation results for a continuous week next month (for thesis figures/tables) ")
-    print("="*60)
-
-    # Generate a list of consecutive dates from July 13, 2026 (Monday) to July 19, 2026 (Sunday)
-    test_week = pd.date_range(start='2026-07-13', end='2026-07-19').strftime('%Y-%m-%d')
-
-    for target_date in test_week:
-        get_optimal_suggestion(target_date)
-        print("-" * 60)
+    print("\n" + "=" * 60)
+    print("🎬 Testing Optimal Suggestion for Weekday vs Weekend...")
+    print("=" * 60)
+    # Test a weekday next month (e.g., Wednesday, 2026-07-15)
+    print("📅 [Weekday Test] Date: 2026-07-15 (Wednesday)")
+    get_optimal_suggestion('2026-07-15')
+    print("-" * 60)
+    # Test a weekend next month (e.g., Sunday, 2026-07-19)
+    print("📅 [Weekend Test] Date: 2026-07-19 (Sunday)")
+    get_optimal_suggestion('2026-07-19')
+    print("=" * 60)
