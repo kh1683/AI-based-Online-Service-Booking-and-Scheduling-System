@@ -222,7 +222,7 @@
 
         editButtons.forEach(button => {
             button.addEventListener('click', function () {
-                // 1. 获取按钮上传递的数据
+                // 1. Get the data passed from the button
                 const id = this.getAttribute('data-id');
                 const name = this.getAttribute('data-name');
                 const minPrice = this.getAttribute('data-min');
@@ -230,14 +230,14 @@
                 const priceNote = this.getAttribute('data-note');
                 const duration = this.getAttribute('data-duration_minutes');
 
-                // 2. 动态塞进 Modal 的 Input 框里
+                // 2. Dynamically insert data into the Modal input fields
                 document.getElementById('edit_name').value = name;
                 document.getElementById('edit_min_price').value = minPrice;
                 document.getElementById('edit_max_price').value = maxPrice;
                 document.getElementById('edit_price_note').value = priceNote;
                 document.getElementById('edit_duration_minutes').value = duration;
 
-                // 3. 动态改变 Form 的 action 提交路径
+                // 3. Dynamically change the Form submit action path
                 editForm.action = "{% url 'edit_service' 99999 %}".replace('99999', id);
             });
         });

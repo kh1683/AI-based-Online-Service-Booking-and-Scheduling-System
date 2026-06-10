@@ -52,7 +52,7 @@ def salon_dashboard(request):
     else:
         forecast_labels, forecast_values = [], []
     
-    # 2. 新增：统计最受欢迎的服务类型 (Popular Service Types)
+    # 2. Added: Statistics on most popular service types (Popular Service Types)
     service_counts = Booking.objects.filter(service__salon=salon, service__is_active=True)\
         .values('service__name')\
         .annotate(count=Count('id'))\
@@ -61,7 +61,7 @@ def salon_dashboard(request):
     service_labels = [item['service__name'] for item in service_counts]
     service_data = [item['count'] for item in service_counts]
 
-    # 3. 新增：基本 KPIs 计数器
+    # 3. Added: Basic KPIs counter
     total_bookings = Booking.objects.filter(service__salon=salon).count()
     pending_bookings_count = Booking.objects.filter(service__salon=salon, status='pending').count()
     
@@ -442,13 +442,13 @@ def merchant_dashboard(request):
     if not salon:
         return redirect('create_salon')
 
-    # 调用 AI 逻辑
+    # Invoke AI logic
     forecast_data = get_ai_forecast(salon.id)
     
     if forecast_data:
         labels, values = forecast_data
     else:
-        # 数据不足时的保底数据
+        # Fallback data when data is insufficient
         labels, values = [], []
 
     return render(request, 'services/dashboard.html', {
@@ -868,7 +868,7 @@ def custom_password_change(request):
 
 def get_ai_recommendations(request):
     salon_id = request.GET.get('salon_id')
-    date_str = request.GET.get('date') # 格式：2026-05-20
+    date_str = request.GET.get('date') # Format: 2026-05-20
     staff_id = request.GET.get('staff_id')
     service_id = request.GET.get('service_id')
     

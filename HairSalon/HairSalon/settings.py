@@ -123,27 +123,27 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # settings.py
-# LOGIN_REDIRECT_URL = 'onboarding_choice' # 登录后先去分流页
-LOGOUT_REDIRECT_URL = 'login'            # 登出后回登录页
-LOGIN_URL = '/services/register/'  # 🚩 这里换成你实际的登录 URL
+# LOGIN_REDIRECT_URL = 'onboarding_choice' # Go to redirection page first after login
+LOGOUT_REDIRECT_URL = 'login'            # Return to login page after logout
+LOGIN_URL = '/services/register/'  # 🚩 Replace this with your actual login URL
 LOGIN_REDIRECT_URL = 'home'
 
 
-# 建议使用环境变量或 App Password (不要直接用登录密码)
+# Recommended to use environment variables or App Password (do not use login password directly)
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'kianhao555@gmail.com' # 你的 Gmail
-EMAIL_HOST_PASSWORD = 'kjfd nqhv dyue nuih' # Gmail 的应用专用密码
+EMAIL_HOST_USER = 'kianhao555@gmail.com' # Your Gmail
+EMAIL_HOST_PASSWORD = 'kjfd nqhv dyue nuih' # Gmail App-specific password
 
-# 🚩 核心：设置为 True 后，用户关闭浏览器时 Session 就会失效
+# 🚩 Core: When set to True, Session expires when user closes the browser
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
-# (可选) 设置一个强制过期时间（例如 30 分钟不操作就踢下线）
+# (Optional) Set a mandatory expiration time (e.g. log out after 30 minutes of inactivity)
 # SESSION_COOKIE_AGE = 1800 
 
-# 设置为 True 确保 Session 在每次请求时都会更新（保持活跃状态）
+# Set to True to ensure Session updates on every request (keeps it active)
 SESSION_SAVE_EVERY_REQUEST = True
 
 import os

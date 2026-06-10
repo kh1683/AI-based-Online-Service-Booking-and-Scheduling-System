@@ -25,7 +25,7 @@ class ServiceForm(forms.ModelForm):
             'price_note': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Depends on hair length'}),
             'duration_minutes': forms.NumberInput(attrs={'placeholder': 'e.g., 60', 'max': '300', 'min': '1'}),
         }
-        # 🚩 核心：价格逻辑校验
+        # 🚩 Core: Price logic validation
     def clean(self):
         cleaned_data = super().clean()
         min_price = cleaned_data.get('min_price')
@@ -34,7 +34,7 @@ class ServiceForm(forms.ModelForm):
 
         if min_price is not None and max_price is not None:
             if max_price < min_price:
-                # 抛出错误给前端显示
+                # Raise validation error for frontend display
                 self.add_error('max_price', "Max price cannot be lower than min price.")
         
         if duration_minutes and duration_minutes > 300:

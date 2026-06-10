@@ -2,7 +2,7 @@ import os
 import django
 import sys
 
-# 设置 Django 的 settings 模块
+# Set Django settings module
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'HairSalon.settings')
 django.setup()
 
@@ -12,15 +12,15 @@ from django.utils import timezone
 from services.models import Booking, Service, Salon, User, Staff
 
 def run_seed():
-    # 1. 配置参数
-    SALON_NAME = "GG" # 或者是你 Michael 账号名下的店名
+    # 1. Configuration parameters
+    SALON_NAME = "GG" # Or the salon name under your Michael account
     try:
         target_salon = Salon.objects.get(name=SALON_NAME)
     except Salon.DoesNotExist:
-        print(f"找不到名为 '{SALON_NAME}' 的沙龙，尝试使用第一个可用的沙龙...")
+        print(f"Cannot find salon named '{SALON_NAME}', trying to use the first available salon...")
         target_salon = Salon.objects.first()
         if not target_salon:
-            print("错误：数据库中没有任何沙龙！")
+            print("Error: No salons in the database!")
             sys.exit(1)
         print(f"Salon not found, using first available salon: {target_salon.name}")
 
@@ -41,13 +41,13 @@ def run_seed():
     print(f"Generating historical data for {target_salon.name}...")
     
     count = 0
-    # 2. 生成过去 30 天的数据
-    for i in range(300): # 生成 300 条记录
-        # 随机日期：过去 30 天
+    # 2. Generate data for the past 30 days
+    for i in range(300): # Generate 300 records
+        # Random date: past 30 days
         days_ago = random.randint(0, 30)
         random_date = timezone.now().date() - timedelta(days=days_ago)
         
-        # 模拟高峰期逻辑：下午 2-4 点预约概率更高
+        # Simulate peak hours logic: booking probability is higher between 2 PM and 4 PM
         if random.random() > 0.5:
             hour = random.randint(14, 16)
         else:

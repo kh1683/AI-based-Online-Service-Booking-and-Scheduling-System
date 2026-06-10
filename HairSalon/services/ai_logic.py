@@ -7,45 +7,45 @@ import holidays
 
 def generate_future_features(future_datetime_str):
     """
-    根据用户想要预订的未来任意时间（比如下个月），生成模型需要的特征
-    future_datetime_str 格式: '2026-07-15 14:00:00'
+    Generate the features needed by the model based on any future time selected by the user (e.g. next month).
+    future_datetime_str format: '2026-07-15 14:00:00'
     """
     dt = pd.to_datetime(future_datetime_str)
     
-    # 1. 基础时间特征
+    # 1. Basic time features
     hour = dt.hour
     day_of_week = dt.dayofweek
     day_of_month = dt.day
     is_weekend = 1 if day_of_week in [5, 6] else 0
     
-    # 2. 自动判断马来西亚/本地公共假期 (以马来西亚假期为例)
+    # 2. Automatically determine Malaysia/local public holidays (using Malaysia holidays as an example)
     my_holidays = holidays.Malaysia(years=dt.year)
     is_holiday = 1 if dt in my_holidays else 0
     
-    # 3. 组合成模型特征向量
+    # 3. Combine into a model feature vector
     feature_vector = [[hour, day_of_week, day_of_month, is_weekend, is_holiday]]
     
     return feature_vector
 
 def get_ai_forecast(salon_id, target_date_str=None):
-    # 1. 提取历史数据
+    # 1. Extract historical data
     raw_data = Booking.objects.filter(salon_id=salon_id) \
         .values('booking_date', 'timeslot') \
         .annotate(y=Count('id')) \
         .order_by('booking_date', 'timeslot')
 
-    if len(raw_data) < 10:  # 如果数据太少，无法训练
+    if len(raw_data) < 10:  # If data is too sparse, skip training
         return None
 
     df = pd.DataFrame(list(raw_data))
     
-    # 将 booking_date 和 timeslot 结合成一个 ds
+    # Combine booking_date and timeslot into a single ds column
     df['ds'] = df.apply(lambda row: datetime.combine(row['booking_date'], row['timeslot']), axis=1)
 
-    # 确保 ds 这一列是不带时区的（Prophet 的要求）
+    # Ensure the ds column is timezone-naive (Prophet requirement)
     df['ds'] = df['ds'].dt.tz_localize(None)
 
-    # 确保时间按小时对齐并聚合
+    # Ensure time alignment to hourly bounds and aggregate
     df['ds'] = df['ds'].dt.floor('h')
     df_raw = df.groupby('ds')['y'].sum().reset_index()
 
@@ -61,12 +61,12 @@ def get_ai_forecast(salon_id, target_date_str=None):
     else:
         df = df_raw
 
-    # 2. 初始化并训练模型，并添加马来西亚公共假期
+    # 2. Initialize and train model, adding Malaysia public holidays
     model = Prophet(yearly_seasonality=False, weekly_seasonality=True, daily_seasonality=True)
     model.add_country_holidays(country_name='MY')
     model.fit(df)
 
-    # 3. 预测未来时间段 (支持针对特定的未来日期进行预测)
+    # 3. Forecast future slots (supporting custom target date prediction)
     if target_date_str:
         try:
             from datetime import time as dt_time
@@ -83,7 +83,7 @@ def get_ai_forecast(salon_id, target_date_str=None):
     # Clip forecast predictions to >= 0 since customer booking count cannot be negative
     forecast['yhat'] = forecast['yhat'].clip(lower=0)
 
-    # 4. 根据输入模式进行过滤
+    # 4. Filter based on target mode
     if target_date_str:
         predictions = forecast
     else:
@@ -91,7 +91,7 @@ def get_ai_forecast(salon_id, target_date_str=None):
         predictions = predictions[predictions['ds'].dt.hour.between(10, 19)]
         predictions = predictions.head(10)
 
-    # 用第一个预测点测试/打印出提取出的特征向量，展示特征解析功能正常工作
+    # Validate feature extraction with sample print
     if not predictions.empty:
         sample_time_str = predictions.iloc[0]['ds'].strftime('%Y-%m-%d %H:%M:%S')
         features = generate_future_features(sample_time_str)
@@ -103,7 +103,7 @@ def get_ai_forecast(salon_id, target_date_str=None):
     return labels, values
 
 def get_optimal_time_slots(salon_id, selected_date_str=None):
-    """根据 AI 预测，推荐当天最空闲（效率最高）的 3 个营业时段"""
+    """Recommend the top 3 freest (most efficient) operating slots of the day based on AI predictions"""
     import os
     import joblib
     from django.conf import settings
@@ -112,28 +112,28 @@ def get_optimal_time_slots(salon_id, selected_date_str=None):
     
     if selected_date_str and os.path.exists(model_path):
         try:
-            # 加载重新训练好的、聪明的模型
+            # Load the retrained smart model
             model = joblib.load(model_path)
             base_date = pd.to_datetime(selected_date_str)
             
-            # 营业时间：10:00 AM - 07:00 PM (10:00 to 19:00 inclusive)
+            # Business hours: 10:00 AM - 07:00 PM (10:00 to 19:00 inclusive)
             business_hours = range(10, 20) 
             predicted_traffic = {}
             
-            # 动态为这一天的每一个小时生成特征，让模型预测
+            # Dynamically generate features for each hour of this day and let the model predict
             for hour in business_hours:
                 day_of_week = base_date.dayofweek
                 day_of_month = base_date.day
                 is_weekend = 1 if day_of_week in [5, 6] else 0
                 
-                # 构建当前小时的特征输入
+                # Construct feature input for the current hour
                 X_future = pd.DataFrame([[hour, day_of_week, day_of_month, is_weekend]], 
                                         columns=['hour', 'day_of_week', 'day_of_month', 'is_weekend'])
                 
                 pred_density = model.predict(X_future)[0]
                 predicted_traffic[hour] = max(0, pred_density)
             
-            # 最优推荐算法逻辑：找出预测客流量最低（最空闲）的前 3 个小时
+            # Optimal recommendation algorithm logic: Find the top 3 hours with the lowest predicted passenger flow
             optimal_hours = sorted(predicted_traffic, key=predicted_traffic.get)[:3]
             optimal_slots = [f"{h:02d}:00" for h in optimal_hours]
             return optimal_slots
@@ -143,25 +143,25 @@ def get_optimal_time_slots(salon_id, selected_date_str=None):
             pass
 
     # ==================== Prophet Fallback ====================
-    # 1. 跑一遍 Prophet 拿到预测数据 (传入目标日期)
+    # 1. Run Prophet once to obtain forecast data (pass target date)
     forecast_data = get_ai_forecast(salon_id, selected_date_str)
     
     if not forecast_data:
-        # 如果历史数据不足，给出默认的营业时间推荐（比如早上的黄金时段）
+        # If historical data is insufficient, provide default business hour recommendations (e.g. morning slot)
         return ['10:00', '11:00', '15:00']
     
     labels, values = forecast_data
     
-    # 2. 将时间和预测值组合成字典或 DataFrame
+    # 2. Combine time and predicted values into a list of dicts
     slots = [{"time": label, "load": val} for label, val in zip(labels, values)]
     
-    # 3. 按负载（Load）从低到高排序 —— 负载越低，对商家效率越好，客户等待时间越短
+    # 3. Sort by load from low to high: lower load means better efficiency and shorter customer wait times
     slots_sorted = sorted(slots, key=lambda x: x['load'])
     
-    # 4. 选出负载最低的 3 个时段作为“智能推荐”
+    # 4. Select the 3 slots with the lowest load as the "smart recommendation"
     optimal_slots = [slot['time'] for slot in slots_sorted[:3]]
     
-    # 如果预测到的时段不足 3 个，用默认时段补齐
+    # If the predicted slots are fewer than 3, fill with default slots
     default_backups = ['10:00', '11:00', '15:00']
     for backup in default_backups:
         if len(optimal_slots) >= 3:

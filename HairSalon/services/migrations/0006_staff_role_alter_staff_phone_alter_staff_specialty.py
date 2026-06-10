@@ -18,11 +18,11 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='staff',
             name='phone',
-            field=models.CharField(blank=True, max_length=20, null=True, verbose_name='联系电话'),
+            field=models.CharField(blank=True, max_length=20, null=True, verbose_name='Phone Number'),
         ),
         migrations.AlterField(
             model_name='staff',
             name='specialty',
-            field=models.CharField(blank=True, max_length=200, null=True, verbose_name='专业技能'),
+            field=models.CharField(blank=True, max_length=200, null=True, verbose_name='Specialty'),
         ),
     ]

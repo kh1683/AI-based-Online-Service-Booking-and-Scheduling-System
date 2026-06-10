@@ -15,10 +15,10 @@ class Migration(migrations.Migration):
             name='Service',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, verbose_name='服务名称')),
-                ('price_range', models.CharField(max_length=50, verbose_name='价格区间')),
-                ('duration', models.IntegerField(help_text='预估耗时 (分钟)', verbose_name='耗时')),
-                ('salon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='services', to='services.salon', verbose_name='所属店铺')),
+                ('name', models.CharField(max_length=100, verbose_name='Service Name')),
+                ('price_range', models.CharField(max_length=50, verbose_name='Price Range')),
+                ('duration', models.IntegerField(help_text='Estimated duration (minutes)', verbose_name='Duration')),
+                ('salon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='services', to='services.salon', verbose_name='Salon')),
             ],
         ),
     ]

@@ -22,7 +22,7 @@ from django.views.generic.base import RedirectView
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('services/', include('services.urls')),
-    # 🚩 将根路径直接跳转到 dashboard
+    # 🚩 Redirect the root path directly to salon_list
     path('', RedirectView.as_view(url='/services/salon_list/', permanent=False)),
     
     
