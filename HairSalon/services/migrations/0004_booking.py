@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('booking_date', models.DateField()),
                 ('timeslot', models.TimeField()),
-                ('status', models.CharField(choices=[('pending', '等待中'), ('confirmed', '已确认'), ('completed', '已完成'), ('cancelled', '已取消')], default='pending', max_length=20)),
+                ('status', models.CharField(choices=[('pending', 'Pending'), ('confirmed', 'Confirmed'), ('completed', 'Completed'), ('cancelled', 'Cancelled')], default='pending', max_length=20)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('customer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='my_bookings', to=settings.AUTH_USER_MODEL)),
                 ('salon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='bookings', to='services.salon')),

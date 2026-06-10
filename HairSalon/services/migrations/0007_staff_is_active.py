@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='staff',
             name='is_active',
-            field=models.BooleanField(default=True, verbose_name='是否在职'),
+            field=models.BooleanField(default=True, verbose_name='Active'),
         ),
     ]

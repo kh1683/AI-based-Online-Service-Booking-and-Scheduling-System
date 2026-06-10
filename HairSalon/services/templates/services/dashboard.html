@@ -1,6 +1,6 @@
 {% extends 'services/base.html' %}
 
-{% block title %}{{ salon.name }} | 仪表盘{% endblock %}
+{% block title %}{{ salon.name }} | Dashboard{% endblock %}
 
 {% block header_content %}
 {% if salon.image %}
@@ -374,7 +374,7 @@
                 datasets: [{
                     label: 'Predicted Customer Load',
                     data: {{ forecast_values|safe }},
-                    borderColor: '#6f42c1', // 紫色显得比较 AI
+                    borderColor: '#6f42c1', // Purple styling looks more AI-themed
                     backgroundColor: 'rgba(111, 66, 193, 0.1)',
                     fill: true,
                     tension: 0.4,

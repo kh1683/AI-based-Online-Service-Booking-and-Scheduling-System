@@ -21,7 +21,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='service',
             name='duration_minutes',
-            field=models.IntegerField(default=30, help_text='平均所需分钟数'),
+            field=models.IntegerField(default=30, help_text='Average duration in minutes'),
         ),
         migrations.AddField(
             model_name='service',

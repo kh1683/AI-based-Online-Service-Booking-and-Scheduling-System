@@ -15,10 +15,10 @@ class Migration(migrations.Migration):
             name='Staff',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, verbose_name='姓名')),
-                ('specialty', models.CharField(max_length=100, verbose_name='专业技能')),
-                ('phone', models.CharField(max_length=20, verbose_name='联系电话')),
-                ('salon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='staffs', to='services.salon', verbose_name='所属店铺')),
+                ('name', models.CharField(max_length=100, verbose_name='Name')),
+                ('specialty', models.CharField(max_length=100, verbose_name='Specialty')),
+                ('phone', models.CharField(max_length=20, verbose_name='Phone Number')),
+                ('salon', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='staffs', to='services.salon', verbose_name='Salon')),
             ],
         ),
     ]
