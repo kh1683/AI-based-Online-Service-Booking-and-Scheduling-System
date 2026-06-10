@@ -23,22 +23,22 @@ import joblib
 
 def prepare_training_data(df):
     """
-    【修改指令 1】: 在训练前，把时间戳彻底解耦成多个高维度特征
-    df 必须包含一个名为 'timestamp' 的时间列
+    [Instruction 1]: Before training, completely decouple the timestamp into multiple high-dimensional features.
+    df must contain a time column named 'timestamp'.
     """
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     
-    # 以前你可能只有这一行：
+    # Previously you might only have had this line:
     df['hour'] = df['timestamp'].dt.hour
     
-    # 【必须加上这几行】让模型懂得区分“下个月的某一天”和“周末”
-    df['day_of_week'] = df['timestamp'].dt.dayofweek   # 0=星期一, 6=星期日
-    df['day_of_month'] = df['timestamp'].dt.day       # 1号到31号
-    df['is_weekend'] = df['day_of_week'].isin([5, 6]).astype(int) # 1=周末, 0=工作日
+    # [Must add these lines] so the model knows how to distinguish "a certain day next month" and "weekend"
+    df['day_of_week'] = df['timestamp'].dt.dayofweek   # 0=Monday, 6=Sunday
+    df['day_of_month'] = df['timestamp'].dt.day       # 1st to 31st
+    df['is_weekend'] = df['day_of_week'].isin([5, 6]).astype(int) # 1=weekend, 0=workday
     
-    # 设定训练用的特征矩阵 X 和目标变量 y
+    # Set feature matrix X and target variable y for training
     X = df[['hour', 'day_of_week', 'day_of_month', 'is_weekend']]
-    y = df['bookings'] # 你的预订量/客流量
+    y = df['bookings'] # your booking volume/passenger flow
     
     return X, y
 
@@ -128,24 +128,24 @@ def run_advanced_evaluation():
 
 def calculate_final_metrics(y_true_raw, y_pred_raw):
     """
-    只计算并输出最适合写入论文的最终结果 (5h Smoothed Scenario)
+    Calculate and output only the final results best suited for thesis writing (5h Smoothed Scenario).
     """
-    # 1. 负数预测值归零处理 (Clipped)
+    # 1. Clip negative prediction values to zero (Clipped)
     y_pred_clipped = np.clip(y_pred_raw, 0, None)
     y_true_clipped = np.clip(y_true_raw, 0, None)
     
-    # 2. 5小时滑动窗口平滑处理 (移除纯随机的泊松预订噪声)
-    # 同时平滑真实值和预测值，以确保物理尺度、幅值和相位完全对齐，避免对光滑模型的惩罚
+    # 2. 5-hour moving window smoothing (removes purely random Poisson booking noise)
+    # Smooth both true and predicted values to ensure physical scale, amplitude, and phase are fully aligned, avoiding penalty to smooth models.
     y_true_smoothed = pd.Series(y_true_clipped).rolling(window=5, min_periods=1, center=True).mean().values
     y_pred_smoothed = pd.Series(y_pred_clipped).rolling(window=5, min_periods=1, center=True).mean().values
     
-    # 3. 计算最终学术指标
+    # 3. Calculate final academic metrics
     mae = mean_absolute_error(y_true_smoothed, y_pred_smoothed)
     rmse = np.sqrt(mean_squared_error(y_true_smoothed, y_pred_smoothed))
-    mape = (mae / np.mean(y_true_smoothed)) * 100  # 采用稳健的全局 WAPE 逻辑计算百分比误差
+    mape = (mae / np.mean(y_true_smoothed)) * 100  # Use robust global WAPE logic to calculate percentage error
     r2 = r2_score(y_true_smoothed, y_pred_smoothed)
     
-    # 4. 最终打印格式
+    # 4. Final print format
     print("=" * 60)
     print("        AI-Driven Scheduling System - Final Evaluation        ")
     print("=" * 60)
@@ -159,52 +159,53 @@ def calculate_final_metrics(y_true_raw, y_pred_raw):
 
 def get_optimal_suggestion(selected_date_str):
     """
-    【修改指令 2】: 根据用户选的未来任意日期，动态计算全天各时段的拥挤度，挑出最空闲的
-    selected_date_str 格式例如: '2026-07-15' (下个月的某一天)
+    [Instruction 2]: Dynamically calculate the congestion level of all slots throughout the day according to any future date selected by the user, and select the freest ones.
+    selected_date_str format e.g., '2026-07-15' (a certain day next month)
     """
-    # 加载刚刚重新训练好的、聪明的模型
+    # Load the newly retrained, smart model
     model = joblib.load('trained_model.pkl')
     base_date = pd.to_datetime(selected_date_str)
     
-    # 营业时间：假设这家店从早上 10 点营业到晚上 20 点
-    business_hours = range(10, 21) 
+    # Business hours: assume this shop operates from 10 AM to 7 PM (19:00)
+    business_hours = range(10, 20) 
     
     predicted_traffic = {}
     
-    # 动态为这一天的每一个小时生成特征，让模型预测
+    # Dynamically generate features for each hour of this day and let the model predict
     for hour in business_hours:
         day_of_week = base_date.dayofweek
         day_of_month = base_date.day
         is_weekend = 1 if day_of_week in [5, 6] else 0
         
-        # 构建当前小时的特征输入
+        # Construct feature input for the current hour
         X_future = pd.DataFrame([[hour, day_of_week, day_of_month, is_weekend]], 
                                 columns=['hour', 'day_of_week', 'day_of_month', 'is_weekend'])
         
-        # 让 AI 预测这个小时的客流拥挤度
+        # Let AI predict the passenger density for this hour
         pred_density = model.predict(X_future)[0]
-        predicted_traffic[hour] = max(0, pred_density) # 确保不为负数
+        predicted_traffic[hour] = max(0, pred_density) # Ensure not negative
     
-    # 【最优推荐算法逻辑】: 找出预测客流量最低（最空闲）的前 3 个小时
+    # [Optimal recommendation algorithm logic]: Find the top 3 hours with the lowest predicted passenger flow (most free)
     optimal_slots = sorted(predicted_traffic, key=predicted_traffic.get)[:3]
     
-    print(f"--- 针对日期 {selected_date_str} 的智能分析结果 ---")
+    print(f"--- Intelligent Analysis Results for Date {selected_date_str} ---")
     for hr, val in predicted_traffic.items():
-        print(f"{hr}:00 -> 预测拥挤度: {val:.2f} 人")
+        print(f"{hr}:00 -> Predicted Congestion: {val:.2f} customers")
         
-    print(f"\n💡 系统最终给出的 Optimal Suggestion 时段为: {[f'{h}:00' for h in optimal_slots]}")
+    print(f"\n💡 The final Optimal Suggestion slots provided by the system are: {[f'{h}:00' for h in optimal_slots]}")
     return optimal_slots
 
 
 if __name__ == '__main__':
     run_advanced_evaluation()
     
-    print("\n" + "=" * 60)
-    print("🎬 Testing Optimal Suggestion for Workday vs Weekend...")
-    print("=" * 60)
-    # 测试下个月的一个【工作日】 (比如 2026-07-15 星期三)
-    get_optimal_suggestion('2026-07-15')
-    print("-" * 60)
-    # 测试下个月的一个【周末】 (比如 2026-07-19 星期日)
-    get_optimal_suggestion('2026-07-19')
-    print("=" * 60)
+    print("\n" + "="*60)
+    print(" 🚀 Start batch generating AI intelligent recommendation results for a continuous week next month (for thesis figures/tables) ")
+    print("="*60)
+
+    # Generate a list of consecutive dates from July 13, 2026 (Monday) to July 19, 2026 (Sunday)
+    test_week = pd.date_range(start='2026-07-13', end='2026-07-19').strftime('%Y-%m-%d')
+
+    for target_date in test_week:
+        get_optimal_suggestion(target_date)
+        print("-" * 60)

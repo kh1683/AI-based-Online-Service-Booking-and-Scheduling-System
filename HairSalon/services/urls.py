@@ -23,6 +23,7 @@ urlpatterns = [
     path('manage-services/', views.manage_services, name='manage_services'),
     path('service/<int:service_id>/toggle/', views.toggle_service_status, name='toggle_service_status'),
     path('service/<int:service_id>/edit/', views.edit_service, name='edit_service'),
+    path('service/<int:service_id>/delete/', views.delete_service, name='delete_service'),
     path('salon/<int:salon_id>/book/', views.create_booking, name='create_booking'),
     path('booking/<int:booking_id>/approve/', views.approve_booking, name='approve_booking'),
     path('booking/<int:booking_id>/reject/', views.reject_booking, name='reject_booking'),

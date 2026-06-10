@@ -56,8 +56,8 @@ class BookingForm(forms.ModelForm):
         super(BookingForm, self).__init__(*args, **kwargs)
         if salon:
             # Core logic: only show staff and services belonging to this salon
-            self.fields['staff'].queryset = Staff.objects.filter(salon=salon)
-            self.fields['service'].queryset = Service.objects.filter(salon=salon)
+            self.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
+            self.fields['service'].queryset = Service.objects.filter(salon=salon, is_active=True)
             
             # Make staff selection optional for auto-assignment
             self.fields['staff'].required = False
