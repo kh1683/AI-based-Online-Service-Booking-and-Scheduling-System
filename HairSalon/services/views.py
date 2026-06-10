@@ -53,7 +53,7 @@ def salon_dashboard(request):
         forecast_labels, forecast_values = [], []
     
     # 2. 新增：统计最受欢迎的服务类型 (Popular Service Types)
-    service_counts = Booking.objects.filter(service__salon=salon)\
+    service_counts = Booking.objects.filter(service__salon=salon, service__is_active=True)\
         .values('service__name')\
         .annotate(count=Count('id'))\
         .order_by('-count')
@@ -74,6 +74,7 @@ def salon_dashboard(request):
     
     pending_bookings = salon.bookings.filter(status='pending').order_by('booking_date', 'timeslot')
     confirmed_bookings = salon.bookings.filter(status='confirmed').order_by('booking_date', 'timeslot')
+    recent_history = salon.bookings.filter(status__in=['completed', 'cancelled']).order_by('-booking_date', '-timeslot')[:5]
     
     for b in pending_bookings:
         is_conflicted = salon.bookings.filter(
@@ -91,6 +92,7 @@ def salon_dashboard(request):
         'services': services,
         'pending_bookings': pending_bookings,  
         'confirmed_bookings': confirmed_bookings, 
+        'recent_history': recent_history,
         'busy_slots': busy_slots,
         'hourly_stats': hourly_stats,
         
@@ -164,9 +166,6 @@ def create_booking(request, salon_id):
     }
     
     if request.method == 'POST':
-        date_str = request.POST.get('booking_date') 
-        booking_date = datetime.strptime(date_str, '%Y-%m-%d').date()
-        
         form = BookingForm(request.POST, salon=salon)
         if form.is_valid():
             booking = form.save(commit=False)
@@ -177,7 +176,7 @@ def create_booking(request, salon_id):
             if booking.booking_date < today:
                 messages.error(request, "You cannot book a date in the past!")
                 form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
-                form.fields['service'].queryset = Service.objects.filter(salon=salon)
+                form.fields['service'].queryset = Service.objects.filter(salon=salon, is_active=True)
                 return render(request, 'services/create_booking.html', {**context, 'form': form})
             
             # 🚩 2. Operating hours interception：10:00 - 19:00 (7 p.m.)
@@ -187,14 +186,14 @@ def create_booking(request, salon_id):
             if not (start_time <= booking.timeslot <= end_time):
                 messages.error(request, f"❌ Booking failed! Salon operating hours are 10:00 AM - 07:00 PM.")
                 form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
-                form.fields['service'].queryset = Service.objects.filter(salon=salon)
+                form.fields['service'].queryset = Service.objects.filter(salon=salon, is_active=True)
                 return render(request, 'services/create_booking.html', {**context, 'form': form})
 
             # 🚩 3. If today, check if time has passed
             if booking.booking_date == today and booking.timeslot < now_local.time():
                 messages.error(request, "❌ This time has already passed. Please select a later time.")
                 form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
-                form.fields['service'].queryset = Service.objects.filter(salon=salon)
+                form.fields['service'].queryset = Service.objects.filter(salon=salon, is_active=True)
                 return render(request, 'services/create_booking.html', {**context, 'form': form})
 
             
@@ -233,7 +232,7 @@ def create_booking(request, salon_id):
                 else:
                     messages.error(request, "❌ Sorry, no stylists are available at this time due to overlapping appointments. Please choose another time.")
                     form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
-                    form.fields['service'].queryset = Service.objects.filter(salon=salon)
+                    form.fields['service'].queryset = Service.objects.filter(salon=salon, is_active=True)
                     return render(request, 'services/create_booking.html', {**context, 'form': form})
 
             else:
@@ -249,7 +248,7 @@ def create_booking(request, salon_id):
                 if conflict:
                     messages.error(request, f"❌ Sorry, {booking.staff.name} is busy during this time (including service cooling time). Please choose another time or stylist.")
                     form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True)
-                    form.fields['service'].queryset = Service.objects.filter(salon=salon)
+                    form.fields['service'].queryset = Service.objects.filter(salon=salon, is_active=True)
                     return render(request, 'services/create_booking.html', {**context, 'form': form})
                 
                 booking.status = 'confirmed'
@@ -274,7 +273,7 @@ def create_booking(request, salon_id):
             initial_data['timeslot'] = selected_time
         form = BookingForm(salon=salon, initial=initial_data)
         form.fields['staff'].queryset = Staff.objects.filter(salon=salon, is_active=True) 
-        form.fields['service'].queryset = Service.objects.filter(salon=salon)
+        form.fields['service'].queryset = Service.objects.filter(salon=salon, is_active=True)
     return render(request, 'services/create_booking.html', {**context, 'form': form})
     
 @login_required
@@ -296,6 +295,46 @@ def reject_booking(request, booking_id):
     booking.save()
     
     return redirect('dashboard')
+
+@login_required
+def complete_booking(request, booking_id):
+    booking = get_object_or_404(Booking, id=booking_id, salon__owner=request.user)
+    if booking.status == 'confirmed':
+        booking.status = 'completed'
+        booking.save()
+        messages.success(request, f"Booking for {booking.customer.username} has been marked as Completed!")
+    else:
+        messages.error(request, "Only confirmed bookings can be marked as completed.")
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
+
+@login_required
+def merchant_booking_history(request):
+    try:
+        salon = Salon.objects.get(owner=request.user)
+    except Salon.DoesNotExist:
+        messages.error(request, "Only merchants with a registered salon can view booking history.")
+        return redirect('home')
+
+    status_filter = request.GET.get('status', 'all')
+    bookings_list = Booking.objects.filter(salon=salon)
+    
+    if status_filter in ['completed', 'cancelled', 'confirmed', 'pending']:
+        bookings_list = bookings_list.filter(status=status_filter)
+        
+    bookings_list = bookings_list.order_by('-booking_date', '-timeslot')
+    
+    # Paginate by 15 bookings per page
+    paginator = Paginator(bookings_list, 15)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    elided_page_range = paginator.get_elided_page_range(page_obj.number, on_each_side=2, on_ends=1)
+    
+    return render(request, 'services/merchant_booking_history.html', {
+        'salon': salon,
+        'page_obj': page_obj,
+        'elided_page_range': elided_page_range,
+        'status_filter': status_filter
+    })
 
 @login_required
 def staff_schedule(request):
@@ -589,6 +628,16 @@ def edit_service(request, service_id):
         else:
             messages.error(request, 'Please correct the errors and try again.')
     return redirect('manage_services')
+
+@login_required
+def delete_service(request, service_id):
+    """Delete a service from the salon menu."""
+    service = get_object_or_404(Service, id=service_id, salon__owner=request.user)
+    name = service.name
+    service.delete()
+    messages.success(request, f"Service '{name}' has been deleted successfully.")
+    return redirect('manage_services')
+
 
 
 def salon_detail(request, salon_id):

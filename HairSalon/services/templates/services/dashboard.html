@@ -225,6 +225,11 @@
                                 <td>{{ booking.booking_date }} | {{ booking.timeslot|time:"g:i A" }}</td>
                                 <td><span class="badge bg-success">Ready</span></td>
                                 <td>
+                                    <a href="{% url 'complete_booking' booking.id %}" 
+                                       class="btn btn-sm btn-success shadow-sm py-1 px-3 rounded-pill text-white me-2"
+                                       style="font-size: 0.75rem;">
+                                        <i class="bi bi-check-lg"></i> Complete
+                                    </a>
                                     <button type="button" 
                                             class="btn btn-sm btn-outline-danger shadow-sm py-1 px-3 rounded-pill"
                                             style="font-size: 0.75rem;"
@@ -251,6 +256,58 @@
         </div>
     </div>
 </div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card shadow-sm border-0" style="border-left: 5px solid #6c757d !important;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="card-title text-secondary mb-0">
+                        <i class="bi bi-clock-history"></i> Recent Booking History
+                    </h4>
+                    <a href="{% url 'merchant_booking_history' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                        View All History <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                         <thead class="table-light">
+                            <tr>
+                                <th>Customer</th>
+                                <th>Service</th>
+                                <th>Staff</th>
+                                <th>Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in recent_history %}
+                            <tr>
+                                <td>{{ booking.customer.username }}</td>
+                                <td>{{ booking.service.name }}</td>
+                                <td>{{ booking.staff.name }}</td>
+                                <td>{{ booking.booking_date }} | {{ booking.timeslot|time:"g:i A" }}</td>
+                                <td>
+                                    {% if booking.status == 'completed' %}
+                                    <span class="badge bg-info-subtle text-info px-3 py-1 rounded-pill">Completed</span>
+                                    {% else %}
+                                    <span class="badge bg-danger-subtle text-danger px-3 py-1 rounded-pill">Cancelled</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-3">No historical completed or cancelled bookings yet</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-md-5 mb-4">
         <div class="card shadow-sm h-100">

@@ -114,6 +114,14 @@
                                                     {% if service.is_active %}Deactivate{% else %}Activate{% endif %}
                                                 </button>
                                             </form>
+
+                                            <!-- Delete Form -->
+                                            <form action="{% url 'delete_service' service.id %}" method="post" class="m-0" onsubmit="return confirm('Are you sure you want to delete the service \'{{ service.name }}\'? This will also delete any bookings associated with it.');">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>
