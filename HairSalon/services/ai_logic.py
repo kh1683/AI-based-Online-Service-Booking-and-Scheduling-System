@@ -62,7 +62,7 @@ def get_ai_forecast(salon_id, target_date_str=None):
         df = df_raw
 
     # 2. Initialize and train model, adding Malaysia public holidays
-    model = Prophet(yearly_seasonality=False, weekly_seasonality=True, daily_seasonality=True)
+    model = Prophet(yearly_seasonality=False, weekly_seasonality=True, daily_seasonality=True, uncertainty_samples=0)
     model.add_country_holidays(country_name='MY')
     model.fit(df)
 

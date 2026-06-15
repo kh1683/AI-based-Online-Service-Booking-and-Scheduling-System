@@ -22,6 +22,9 @@ class Salon(models.Model):
     # Extend: support salon images
     image = models.ImageField(upload_to='salons/', blank=True, null=True, verbose_name="Salon Image")
     
+    # Business hours
+    business_hours = models.CharField(max_length=100, default="10:00 AM - 07:00 PM", verbose_name="Business Hours")
+    
     # Track creation time
     created_at = models.DateTimeField(auto_now_add=True)
 

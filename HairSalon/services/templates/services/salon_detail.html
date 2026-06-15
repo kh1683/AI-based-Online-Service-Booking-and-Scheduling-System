@@ -27,6 +27,66 @@
         </a>
     </div>
 
+    <!-- Salon Info Card -->
+    <div class="card shadow-sm border-0 mb-5" style="border-radius: 20px; background: white; overflow: hidden;">
+        <div class="row g-0">
+            <div class="col-md-4 d-none d-md-block" style="min-height: 200px;">
+                {% if salon.has_valid_image %}
+                <div style="background-image: url('{{ salon.image.url }}'); background-size: cover; background-position: center; height: 100%; width: 100%;"></div>
+                {% else %}
+                <div class="bg-light d-flex align-items-center justify-content-center h-100">
+                    <i class="bi bi-shop-window display-1 text-muted"></i>
+                </div>
+                {% endif %}
+            </div>
+            <div class="col-md-8">
+                <div class="card-body p-4 d-flex flex-column h-100 justify-content-center">
+                    <h4 class="fw-bold text-theme-primary mb-2"><i class="bi bi-info-circle-fill me-2 text-primary"></i>About {{ salon.name }}</h4>
+                    <p class="text-secondary mb-3">{{ salon.description|default:"Welcome to our salon! We offer premium hair styling and care services tailored just for you." }}</p>
+                    
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle p-2 me-3 text-primary d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;"><i class="bi bi-geo-alt-fill"></i></div>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem;">Address</small>
+                                    <span class="fw-medium text-dark small">{{ salon.location }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle p-2 me-3 text-primary d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;"><i class="bi bi-telephone-fill"></i></div>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem;">Contact Number</small>
+                                    <span class="fw-medium text-dark small">{{ salon.contact_number }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle p-2 me-3 text-primary d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;"><i class="bi bi-clock-fill"></i></div>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem;">Business Hours</small>
+                                    <span class="fw-medium text-dark small">{{ salon.business_hours|default:"10:00 AM - 07:00 PM" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-light rounded-circle p-2 me-3 text-warning d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;"><i class="bi bi-star-fill text-warning"></i></div>
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.75rem;">Average Rating</small>
+                                    <span class="fw-bold text-dark small">{% if salon.avg_rating %}{{ salon.avg_rating }} / 5 ({{ salon.reviews_count }} reviews){% else %}No ratings yet{% endif %}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row align-items-center mb-4">
         <div class="col-md-8">
             <h3 class="fw-bold text-theme-primary mb-0"><i class="bi bi-stars me-2"></i>Our Services</h3>

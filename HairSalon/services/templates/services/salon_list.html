@@ -2,7 +2,7 @@
 
 {% block header_content %}
     <h1 class="display-5 fw-bold">Discover Premium Services</h1>
-    <p class="lead">Search for the best salons, clinics, and workshops near you.</p>
+    <p class="lead">Browse salons near you.</p>
 {% endblock %}
 
 {% block content %}
@@ -20,9 +20,18 @@
             
             <div class="card-body d-flex flex-column justify-content-between">
                 <div>
-                    <h5 class="card-title fw-bold">{{ salon.name }}</h5>
-                    <p class="text-muted small mb-3">
+                    <h5 class="card-title fw-bold mb-1">{{ salon.name }}</h5>
+                    <p class="text-secondary small mb-2 text-truncate" style="font-size: 0.82rem;" title="{{ salon.description }}">
+                        {{ salon.description|default:"Welcome to our salon! We offer premium hair styling and care services." }}
+                    </p>
+                    <p class="text-muted small mb-1" style="font-size: 0.8rem;">
                         <i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ salon.location }}
+                    </p>
+                    <p class="text-muted small mb-1" style="font-size: 0.8rem;">
+                        <i class="bi bi-telephone-fill text-primary me-1"></i>{{ salon.contact_number }}
+                    </p>
+                    <p class="text-muted small mb-3" style="font-size: 0.8rem;">
+                        <i class="bi bi-clock-fill text-success me-1"></i>{{ salon.business_hours|default:"10:00 AM - 07:00 PM" }}
                     </p>
                     
                     {% if salon.latest_review %}
