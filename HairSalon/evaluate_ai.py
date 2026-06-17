@@ -107,7 +107,7 @@ def run_advanced_evaluation():
 
     # 4. Model Training
     print("🤖 Training Prophet Model with Additive Seasonality components...")
-    model = Prophet(yearly_seasonality=False, weekly_seasonality=True, daily_seasonality=True)
+    model = Prophet(yearly_seasonality=False, weekly_seasonality=True, daily_seasonality=True, uncertainty_samples=0)
     model.fit(train_df)
 
     # 5. Prediction execution

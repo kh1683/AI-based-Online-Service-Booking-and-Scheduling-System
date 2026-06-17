@@ -13,7 +13,7 @@ urlpatterns = [
     path('change-password/', views.custom_password_change, name='custom_password_change'),
     path('edit-salon-location/', views.edit_salon_location, name='edit_salon_location'),
     path('edit-salon-image/', views.edit_salon_image, name='edit_salon_image'),
-    path('accounts/login/', auth_views.LoginView.as_view(extra_context={'google_client_id': settings.GOOGLE_CLIENT_ID}), name='login'),
+    path('accounts/login/', views.CustomLoginView.as_view(extra_context={'google_client_id': settings.GOOGLE_CLIENT_ID}), name='login'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('dashboard/', views.salon_dashboard, name='dashboard'),
     path('dashboard/history/', views.merchant_booking_history, name='merchant_booking_history'),

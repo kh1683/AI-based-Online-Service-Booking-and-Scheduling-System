@@ -104,13 +104,37 @@
 
 <div class="row mb-4">
     <!-- AI Demand Forecast -->
-    <div class="col-lg-8 mb-4 mb-lg-0">
+    <div class="col-lg-5 mb-4 mb-lg-0">
         <div class="card shadow border-0 p-4 h-100" style="border-radius: 20px;">
             <h5 class="fw-bold text-primary mb-3">
-                <i class="bi bi-cpu-fill"></i> AI-Based Demand Forecast (Next 24 Hours)
+                <i class="bi bi-cpu-fill"></i> AI-Based Demand Forecast
             </h5>
             <div style="position: relative; height: 260px;">
                 <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- AI Forecast Summary -->
+    <div class="col-lg-3 mb-4 mb-lg-0">
+        <div class="card shadow border-0 p-4 h-100 bg-white" style="border-radius: 20px; border: 1px dashed #6f42c1 !important;">
+            <h5 class="fw-bold mb-3" style="color: #6f42c1;">
+                <i class="bi bi-robot"></i> AI Forecast Summary
+            </h5>
+            <div class="d-flex flex-column gap-3">
+                <div class="p-2 bg-light rounded-3">
+                    <span class="text-muted small d-block" style="font-size: 0.75rem;">Peak Hour</span>
+                    <strong class="text-dark" style="font-size: 0.95rem;"><i class="bi bi-clock-fill text-danger me-1"></i>{{ forecast_peak_hour|default:"12:00 PM - 1:00 PM" }}</strong>
+                </div>
+                <div class="p-2 bg-light rounded-3">
+                    <span class="text-muted small d-block" style="font-size: 0.75rem;">Expected Demand</span>
+                    <strong class="text-dark" style="font-size: 0.95rem;"><i class="bi bi-activity text-warning me-1"></i>{{ forecast_demand_level|default:"Medium" }}</strong>
+                </div>
+                <div class="p-2 bg-light rounded-3" style="border-left: 3px solid #6f42c1;">
+                    <span class="text-muted small d-block text-uppercase fw-bold text-primary" style="font-size: 0.7rem; letter-spacing: 0.5px;">Recommended Action</span>
+                    <p class="text-secondary mb-0 mt-1" style="font-size: 0.8rem; line-height: 1.4; font-weight: 500;">
+                        {{ forecast_recommended_action|default:"Monitor bookings during peak periods." }}
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -367,40 +391,92 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const ctx = document.getElementById('forecastChart').getContext('2d');
+        
+        // Create premium linear gradient for the line chart fill
+        const gradient = ctx.createLinearGradient(0, 0, 0, 260);
+        gradient.addColorStop(0, 'rgba(111, 66, 193, 0.35)');
+        gradient.addColorStop(1, 'rgba(111, 66, 193, 0.00)');
+
+        const forecastValues = {{ forecast_values|safe }};
+        const maxVal = forecastValues.length ? Math.max(...forecastValues) : 0;
+        // Calculate dynamic maximum with some padding so peaks don't touch the top
+        const suggestedMax = maxVal > 0 ? Math.ceil(maxVal * 1.25) : 5;
+
         new Chart(ctx, {
             type: 'line',
             data: {
                 labels: {{ forecast_labels|safe }},
                 datasets: [{
-                    label: 'Predicted Customer Load',
-                    data: {{ forecast_values|safe }},
-                    borderColor: '#6f42c1', // Purple styling looks more AI-themed
-                    backgroundColor: 'rgba(111, 66, 193, 0.1)',
+                    label: 'Expected Customers',
+                    data: forecastValues,
+                    borderColor: '#6f42c1',
+                    backgroundColor: gradient,
                     fill: true,
                     tension: 0.4,
-                    pointRadius: 0
+                    pointRadius: 4,
+                    pointBackgroundColor: '#6f42c1',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 1.5,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#6f42c1',
+                    pointHoverBorderWidth: 2
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        backgroundColor: 'rgba(33, 37, 41, 0.95)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff',
+                        padding: 10,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `Expected Customers: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     x: {
+                        grid: {
+                            display: false
+                        },
                         title: {
                             display: true,
-                            text: 'Business Hours (10:00 - 19:00)'
+                            text: 'Business Hours (10:00 - 19:00)',
+                            color: '#6c757d',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
                         }
                     },
                     y: {
                         beginAtZero: true,
-                        min: 0,
-                        max: 5,
+                        suggestedMax: suggestedMax,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)',
+                            borderDash: [5, 5]
+                        },
                         ticks: {
-                            stepSize: 2
+                            precision: 1
                         },
                         title: {
                             display: true,
-                            text: 'Expected Customers'
+                            text: 'Expected Customers',
+                            color: '#6c757d',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            }
                         }
                     }
                 }

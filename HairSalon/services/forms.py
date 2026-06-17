@@ -72,13 +72,14 @@ class SalonForm(forms.ModelForm):
     class Meta:
         model = Salon
         # Fields to be filled by merchant, must match Salon model fields
-        fields = ['name', 'location', 'contact_number', 'description', 'image']
+        fields = ['name', 'location', 'contact_number', 'business_hours', 'description', 'image']
         
         # Add Bootstrap styling for prettier inputs
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Salon Name'}),
             'location': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Enter Address'}),
             'contact_number': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Enter Contact Number'}),
+            'business_hours': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. 10:00 AM - 07:00 PM'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'image': forms.ClearableFileInput(attrs={'class': 'form-control'}),
         }
