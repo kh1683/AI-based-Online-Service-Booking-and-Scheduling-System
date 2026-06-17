@@ -104,13 +104,37 @@
 
 <div class="row mb-4">
     <!-- AI Demand Forecast -->
-    <div class="col-lg-8 mb-4 mb-lg-0">
+    <div class="col-lg-5 mb-4 mb-lg-0">
         <div class="card shadow border-0 p-4 h-100" style="border-radius: 20px;">
             <h5 class="fw-bold text-primary mb-3">
-                <i class="bi bi-cpu-fill"></i> AI-Based Demand Forecast (Next 24 Hours)
+                <i class="bi bi-cpu-fill"></i> AI-Based Demand Forecast
             </h5>
             <div style="position: relative; height: 260px;">
                 <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- AI Forecast Summary -->
+    <div class="col-lg-3 mb-4 mb-lg-0">
+        <div class="card shadow border-0 p-4 h-100 bg-white" style="border-radius: 20px; border: 1px dashed #6f42c1 !important;">
+            <h5 class="fw-bold mb-3" style="color: #6f42c1;">
+                <i class="bi bi-robot"></i> AI Forecast Summary
+            </h5>
+            <div class="d-flex flex-column gap-3">
+                <div class="p-2 bg-light rounded-3">
+                    <span class="text-muted small d-block" style="font-size: 0.75rem;">Peak Hour</span>
+                    <strong class="text-dark" style="font-size: 0.95rem;"><i class="bi bi-clock-fill text-danger me-1"></i>{{ forecast_peak_hour|default:"12:00 PM - 1:00 PM" }}</strong>
+                </div>
+                <div class="p-2 bg-light rounded-3">
+                    <span class="text-muted small d-block" style="font-size: 0.75rem;">Expected Demand</span>
+                    <strong class="text-dark" style="font-size: 0.95rem;"><i class="bi bi-activity text-warning me-1"></i>{{ forecast_demand_level|default:"Medium" }}</strong>
+                </div>
+                <div class="p-2 bg-light rounded-3" style="border-left: 3px solid #6f42c1;">
+                    <span class="text-muted small d-block text-uppercase fw-bold text-primary" style="font-size: 0.7rem; letter-spacing: 0.5px;">Recommended Action</span>
+                    <p class="text-secondary mb-0 mt-1" style="font-size: 0.8rem; line-height: 1.4; font-weight: 500;">
+                        {{ forecast_recommended_action|default:"Monitor bookings during peak periods." }}
+                    </p>
+                </div>
             </div>
         </div>
     </div>
