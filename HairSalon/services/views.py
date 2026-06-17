@@ -743,7 +743,7 @@ def choose_role(request, role_choice):
         profile.save()
         return redirect('create_salon') 
     
-    return redirect('onboarding_page')
+    return redirect('onboarding_choice')
 
 
 
@@ -1094,5 +1094,25 @@ def submit_salon_review(request, salon_id):
             messages.error(request, "Rating is required.")
             
     return redirect('salon_detail', salon_id=salon.id)
+
+
+from django.contrib.auth.views import LoginView
+from django.urls import reverse
+
+class CustomLoginView(LoginView):
+    def get_success_url(self):
+        user = self.request.user
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        if profile.role == 'none':
+            messages.info(self.request, "Please select your role to continue.")
+            return reverse('onboarding_choice')
+        elif profile.role == 'merchant':
+            if not profile.has_setup_salon:
+                return reverse('create_salon')
+            return reverse('dashboard')
+        elif profile.role == 'customer':
+            return reverse('salon_list')
+        return super().get_success_url()
+
 
 

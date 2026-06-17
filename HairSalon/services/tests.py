@@ -2,7 +2,7 @@ from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import date, time, datetime, timedelta
-from .models import Salon, Staff, Service, Booking
+from .models import Salon, Staff, Service, Booking, UserProfile
 import json
 
 class BookingRecommendationsTestCase(TestCase):
@@ -169,4 +169,79 @@ class BookingRecommendationsTestCase(TestCase):
         self.client.login(username='other_customer', password='password')
         response2 = self.client.get(f'/services/booking/{booking.id}/')
         self.assertEqual(response2.status_code, 302)
+
+
+class LoginRedirectTestCase(TestCase):
+    def setUp(self):
+        self.client = Client()
+        
+    def test_login_redirect_role_none(self):
+        # Create user with role='none'
+        user = User.objects.create_user(username='none_user', password='password')
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        profile.role = 'none'
+        profile.save()
+        
+        # Log in and check redirect
+        response = self.client.post('/services/accounts/login/', {
+            'username': 'none_user',
+            'password': 'password'
+        }, follow=False)
+        # Should redirect to onboarding choice
+        self.assertRedirects(response, '/services/onboarding/')
+
+    def test_login_redirect_role_customer(self):
+        # Create user with role='customer'
+        user = User.objects.create_user(username='customer_user', password='password')
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        profile.role = 'customer'
+        profile.save()
+        
+        # Log in and check redirect
+        response = self.client.post('/services/accounts/login/', {
+            'username': 'customer_user',
+            'password': 'password'
+        }, follow=False)
+        # Should redirect to salon list
+        self.assertRedirects(response, '/services/salon_list/')
+
+    def test_login_redirect_role_merchant_no_salon(self):
+        # Create merchant without a salon
+        user = User.objects.create_user(username='merchant_user_no_salon', password='password')
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        profile.role = 'merchant'
+        profile.has_setup_salon = False
+        profile.save()
+        
+        # Log in and check redirect
+        response = self.client.post('/services/accounts/login/', {
+            'username': 'merchant_user_no_salon',
+            'password': 'password'
+        }, follow=False)
+        # Should redirect to create salon
+        self.assertRedirects(response, '/services/create-salon/')
+
+    def test_login_redirect_role_merchant_with_salon(self):
+        # Create merchant with a salon
+        user = User.objects.create_user(username='merchant_user_with_salon', password='password')
+        profile, created = UserProfile.objects.get_or_create(user=user)
+        profile.role = 'merchant'
+        profile.has_setup_salon = True
+        profile.save()
+        
+        # Create the salon associated with merchant
+        Salon.objects.create(
+            owner=user,
+            name="Merchant Salon",
+            location="Location"
+        )
+        
+        # Log in and check redirect
+        response = self.client.post('/services/accounts/login/', {
+            'username': 'merchant_user_with_salon',
+            'password': 'password'
+        }, follow=False)
+        # Should redirect to merchant dashboard
+        self.assertRedirects(response, '/services/dashboard/')
+
 

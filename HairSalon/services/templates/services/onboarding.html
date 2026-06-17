@@ -9,7 +9,7 @@
                     <i class="bi bi-person-heart display-4 text-primary mb-3"></i>
                     <h4>I am a Customer</h4>
                     <p class="text-muted">I want to book professional beauty, hair, or clinic services</p>
-                    <a href="{% url 'salon_list' %}" class="btn btn-outline-primary mt-auto">Start Exploring</a>
+                    <a href="{% url 'choose_role' 'customer' %}" class="btn btn-outline-primary mt-auto">Start Exploring</a>
                 </div>
             </div>
             <div class="col-md-6 mb-3">
@@ -17,7 +17,7 @@
                     <i class="bi bi-shop display-4 text-theme-accent mb-3"></i>
                     <h4>I am a Salon Owner</h4>
                     <p class="text-muted">I want to manage my salon, staff, and enable AI scheduling</p>
-                    <a href="{% url 'create_salon' %}" class="btn btn-primary mt-auto">Register My Salon</a>
+                    <a href="{% url 'choose_role' 'merchant' %}" class="btn btn-primary mt-auto">Register My Salon</a>
                 </div>
             </div>
         </div>
