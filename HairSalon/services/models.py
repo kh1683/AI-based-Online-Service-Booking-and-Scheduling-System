@@ -3,6 +3,7 @@
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.core.validators import RegexValidator
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from datetime import datetime, timedelta
@@ -16,7 +17,17 @@ class Salon(models.Model):
     # Salon basic info
     name = models.CharField(max_length=100, verbose_name="Salon Name")
     location = models.CharField(max_length=200, verbose_name="Location")
-    contact_number = models.CharField(max_length=20, verbose_name="Contact Number", default="N/A")
+    contact_number = models.CharField(
+        max_length=20, 
+        verbose_name="Contact Number", 
+        default="N/A",
+        validators=[
+            RegexValidator(
+                regex=r'^\d{11,12}$',
+                message="Contact number must be between 11 and 12 digits."
+            )
+        ]
+    )
     description = models.TextField(blank=True, null=True, verbose_name="Description")
     
     # Extend: support salon images
@@ -151,3 +162,15 @@ class SalonReview(models.Model):
 
     def __str__(self):
         return f"{self.customer.username} - {self.salon.name} - {self.rating} Stars"
+
+# Attach a role property to User model to check role easily
+def get_user_role(self):
+    try:
+        profile = self.userprofile
+        if profile.role in ('none', '', None):
+            return None
+        return profile.role
+    except Exception:
+        return None
+
+User.role = property(get_user_role)
