@@ -67,7 +67,7 @@ salon1, created1 = Salon.objects.update_or_create(
     defaults={
         'name': "Signature Style Hair Salon",
         'location': "Level 2, Premium Fashion Block, Midtown Shopping Mall, Kuala Lumpur",
-        'contact_number': "+60 3-2166 8822",
+        'contact_number': "60321668822",
         'business_hours': "10:00 AM - 07:00 PM",
         'description': "At Signature Style, we believe your hair is your ultimate accessory. Our top-tier stylists specialize in couture haircuts, precision coloring, and bespoke treatments designed to bring out your unique personality.",
         'image': SALON1_IMG_REL
@@ -80,7 +80,7 @@ salon2, created2 = Salon.objects.update_or_create(
     defaults={
         'name': "Hair Style Salon",
         'location': "No. 15, Ground Floor, Jalan Telawi 3, Bangsar, Kuala Lumpur",
-        'contact_number': "+60 3-2284 9911",
+        'contact_number': "60322849911",
         'business_hours': "10:00 AM - 07:00 PM",
         'description': "Classic cuts, modern styling, and exceptional service. Hair Style Salon is your neighborhood destination for clean trims, fresh styling, and premium hair treatments in a warm, welcoming environment.",
         'image': SALON2_IMG_REL

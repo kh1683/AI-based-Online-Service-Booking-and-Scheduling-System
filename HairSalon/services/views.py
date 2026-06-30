@@ -26,14 +26,17 @@ def salon_dashboard(request):
     if hasattr(request.user, 'staff_profile'):
         return redirect('staff_schedule') 
 
-    
+    user_profile = getattr(request.user, 'userprofile', None)
+    if user_profile and user_profile.role == 'customer':
+        return redirect('salon_list')
+
     try:
         salon = Salon.objects.get(owner=request.user)
     except Salon.DoesNotExist:
-        return redirect('')  
+        if user_profile and user_profile.role == 'merchant':
+            return redirect('create_salon')
+        return redirect('salon_list')
 
-
-    salon = get_object_or_404(Salon, owner=request.user)
     staff_count = Staff.objects.filter(salon=salon, is_active=True).count()
     service_count = Service.objects.filter(salon=salon, is_active=True).count()
     
@@ -429,7 +432,8 @@ def register(request):
 def onboarding_choice(request):
     
     
-    if hasattr(request.user, 'salon'):
+    user_profile = getattr(request.user, 'userprofile', None)
+    if user_profile and user_profile.role == 'merchant' and hasattr(request.user, 'salon'):
         return redirect('dashboard')
     return render(request, 'services/onboarding_choice.html')    
     

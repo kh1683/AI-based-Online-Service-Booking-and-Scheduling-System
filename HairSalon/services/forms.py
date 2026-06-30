@@ -90,6 +90,15 @@ class SalonForm(forms.ModelForm):
             raise forms.ValidationError("A salon photo is required. Please upload an image of your salon.")
         return image
 
+    def clean_contact_number(self):
+        contact_number = self.cleaned_data.get('contact_number')
+        if not contact_number:
+            raise forms.ValidationError("Contact number is required.")
+        import re
+        if not re.match(r'^\d{11,12}$', contact_number):
+            raise forms.ValidationError("Contact number must be between 11 and 12 digits.")
+        return contact_number
+
 from django.contrib.auth.models import User
 from .models import UserProfile
 
